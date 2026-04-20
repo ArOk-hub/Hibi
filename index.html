@@ -46,6 +46,10 @@
     --hibi-font-display: 'Noto Serif JP', serif;
   }
   body { font-family: var(--hibi-font-body); }
+  /* Fullscreen (mobile / PWA standalone): drop the centered scroll container */
+  body.hibi-fullscreen { overflow: hidden; background: #FAF7F0; overscroll-behavior: none; }
+  body.hibi-fullscreen.hibi-dark { background: #15130F; }
+  body.hibi-fullscreen #root { height: 100vh; height: 100dvh; }
   @keyframes fade-in { from { opacity:0 } to { opacity:1 } }
   @keyframes slide-up { from { transform:translateY(30px); opacity:0 } to { transform:translateY(0); opacity:1 } }
   button { font-family: inherit; }
@@ -172,6 +176,50 @@
           <TaskDetail task={detail} onClose={()=>setDetail(null)} onToggle={onToggle} dark={dark}/>
         </div>
       );
+
+      // fullscreen mode: on narrow viewports or PWA standalone launches, drop the iPhone frame
+      const [fullscreen, setFullscreen] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const standalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone;
+        return standalone || window.innerWidth < 700;
+      });
+      useEffect(() => {
+        const mq = window.matchMedia('(max-width: 699px)');
+        const standaloneMq = window.matchMedia('(display-mode: standalone)');
+        const update = () => {
+          const standalone = standaloneMq.matches || window.navigator.standalone;
+          setFullscreen(standalone || mq.matches);
+        };
+        mq.addEventListener?.('change', update);
+        standaloneMq.addEventListener?.('change', update);
+        window.addEventListener('resize', update);
+        return () => {
+          mq.removeEventListener?.('change', update);
+          standaloneMq.removeEventListener?.('change', update);
+          window.removeEventListener('resize', update);
+        };
+      }, []);
+      useEffect(() => {
+        document.body.classList.toggle('hibi-fullscreen', fullscreen);
+        document.body.classList.toggle('hibi-dark', !!dark);
+      }, [fullscreen, dark]);
+
+      if (fullscreen) {
+        return (
+          <div data-screen-label={`Hibi ${titleMap[tab]}`} style={{
+            width:'100vw', height:'100vh', height:'100dvh', overflow:'hidden',
+            paddingTop:'env(safe-area-inset-top)',
+            paddingBottom:'env(safe-area-inset-bottom)',
+            paddingLeft:'env(safe-area-inset-left)',
+            paddingRight:'env(safe-area-inset-right)',
+            boxSizing:'border-box',
+            background: dark ? '#15130F' : '#FAF7F0',
+          }}>
+            {sceneContent}
+            <TweaksPanel open={tweaksOpen} onClose={()=>setTweaksOpen(false)} settings={settings} setSettings={updateSettings}/>
+          </div>
+        );
+      }
 
       return (
         <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>

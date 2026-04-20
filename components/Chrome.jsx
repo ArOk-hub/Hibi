@@ -3,36 +3,25 @@
 function TopBar({ title, subtitle, dark, onSearch, searchValue, setSearchValue }) {
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
+  const isFull = typeof document !== 'undefined' && document.body.classList.contains('hibi-fullscreen');
+  const topPad = isFull ? 'calc(env(safe-area-inset-top, 0px) + 8px)' : '44px';
   return (
     <div style={{
       position:'sticky', top:0, zIndex:20,
-      background: dark ? 'rgba(28,26,23,0.78)' : 'rgba(250,247,240,0.78)',
+      background: dark ? 'rgba(28,26,23,0.6)' : 'rgba(250,247,240,0.6)',
       backdropFilter:'blur(20px) saturate(180%)',
       WebkitBackdropFilter:'blur(20px) saturate(180%)',
-      padding:'54px 16px 10px',
-      borderBottom: `0.5px solid ${dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)'}`,
-    }}>
-      {/* search bar */}
-      <div style={{
-        display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
-        background: dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)',
-        borderRadius:10, marginTop:4,
-      }}>
-        <Icon name="search" size={16} color={sub}/>
-        <input
-          value={searchValue}
-          onChange={e=>setSearchValue(e.target.value)}
-          placeholder="検索"
-          style={{ border:'none', outline:'none', flex:1, background:'transparent', fontSize:15, color:text, fontFamily:'inherit' }}
-        />
-      </div>
-    </div>
+      padding:`${topPad} 0 0`,
+    }}/>
   );
 }
 
 function TabBar({ tab, setTab, onAdd, dark }) {
   const textC = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.45)' : 'rgba(43,42,38,0.45)';
+  const isFull = typeof document !== 'undefined' && document.body.classList.contains('hibi-fullscreen');
+  const fabBottom = isFull ? 'calc(env(safe-area-inset-bottom, 0px) + 80px)' : 96;
+  const tabBottomPad = isFull ? 'calc(env(safe-area-inset-bottom, 0px) + 10px)' : 26;
   const tabs = [
     { id:'today', label:'今日', icon:'today' },
     { id:'cal',   label:'カレンダー', icon:'calendar' },
@@ -43,7 +32,7 @@ function TabBar({ tab, setTab, onAdd, dark }) {
     <>
       {/* FAB */}
       <button onClick={onAdd} style={{
-        position:'absolute', right:18, bottom:96, zIndex:30,
+        position:'absolute', right:18, bottom:fabBottom, zIndex:30,
         width:56, height:56, borderRadius:28, border:'none',
         background: accent, color:'#fff',
         boxShadow:'0 8px 24px rgba(122,141,63,0.45), 0 2px 6px rgba(0,0,0,0.15)',
@@ -64,7 +53,7 @@ function TabBar({ tab, setTab, onAdd, dark }) {
         backdropFilter:'blur(20px) saturate(180%)',
         WebkitBackdropFilter:'blur(20px) saturate(180%)',
         borderTop:`0.5px solid ${dark?'rgba(255,255,255,0.08)':'rgba(43,42,38,0.08)'}`,
-        padding:'8px 8px 26px',
+        padding:`8px 8px ${typeof tabBottomPad === 'number' ? tabBottomPad+'px' : tabBottomPad}`,
         display:'flex', justifyContent:'space-around',
       }}>
         {tabs.map(t => (
