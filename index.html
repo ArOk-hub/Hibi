@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<title>Hibi 日々 — Todo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#7A8D3F"/>
+<meta name="description" content="日々の積み重ねを、美しく。カレンダー連動の和モダンTodoアプリ。"/>
+<link rel="manifest" href="./manifest.webmanifest"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Hibi"/>
+<link rel="apple-touch-icon" href="./apple-touch-icon.png"/>
+<link rel="icon" type="image/svg+xml" href="./icon.svg"/>
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png"/>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin:0; padding:0; min-height:100vh; }
+  body {
+    font-family: 'Noto Sans JP', -apple-system, system-ui, sans-serif;
+    background: #EAE6DB;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    color: #2B2A26;
+  }
+  :root {
+    --hibi-font-body: 'Noto Sans JP', -apple-system, system-ui, sans-serif;
+    --hibi-font-display: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+  }
+  body.font-mincho {
+    --hibi-font-body: 'Noto Serif JP', 'Noto Sans JP', serif;
+    --hibi-font-display: 'Noto Serif JP', serif;
+  }
+  body { font-family: var(--hibi-font-body); }
+  @keyframes fade-in { from { opacity:0 } to { opacity:1 } }
+  @keyframes slide-up { from { transform:translateY(30px); opacity:0 } to { transform:translateY(0); opacity:1 } }
+  button { font-family: inherit; }
+  *::-webkit-scrollbar { width: 0; height: 0; }
+  .paper-bg {
+    background-color: #FAF7F0;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(184,74,59,0.025) 0, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(122,141,63,0.03) 0, transparent 45%);
+  }
+  .paper-bg-dark {
+    background-color: #15130F;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(184,74,59,0.06) 0, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(122,141,63,0.05) 0, transparent 45%);
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="components/data.jsx"></script>
+  <script type="text/babel" src="components/icons.jsx"></script>
+  <script type="text/babel" src="components/TaskCell.jsx"></script>
+  <script type="text/babel" src="components/TodayScreen.jsx"></script>
+  <script type="text/babel" src="components/CalendarScreen.jsx"></script>
+  <script type="text/babel" src="components/ListsStatsScreens.jsx"></script>
+  <script type="text/babel" src="components/AddTaskModal.jsx"></script>
+  <script type="text/babel" src="components/TaskDetail.jsx"></script>
+  <script type="text/babel" src="components/Chrome.jsx"></script>
+
+  <script type="text/babel" data-presets="react">
+    var useState = React.useState;
+    var useEffect = React.useEffect;
+    var useMemo = React.useMemo;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "dark": true,
+      "density": "comfy",
+      "font": "gothic",
+      "accent": "#7A8D3F"
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [tab, setTab] = useState(() => {
+        const t = localStorage.getItem('hibi-tab');
+        return (t === 'stats') ? 'today' : (t || 'today');
+      });
+      const [tasks, setTasks] = useState(INITIAL_TASKS);
+      const [addOpen, setAddOpen] = useState(false);
+      const [detail, setDetail] = useState(null);
+      const [search, setSearch] = useState('');
+      const [settings, setSettings] = useState(TWEAK_DEFAULTS);
+      const [tweaksOpen, setTweaksOpen] = useState(false);
+
+      useEffect(() => { localStorage.setItem('hibi-tab', tab); }, [tab]);
+
+      useEffect(() => {
+        document.body.classList.toggle('font-mincho', settings.font === 'mincho');
+      }, [settings.font]);
+
+      useEffect(() => {
+        const handler = (e) => {
+          if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
+          if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
+        };
+        window.addEventListener('message', handler);
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+        return () => window.removeEventListener('message', handler);
+      }, []);
+
+      const updateSettings = (fn) => {
+        setSettings(prev => {
+          const next = typeof fn === 'function' ? fn(prev) : fn;
+          window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+          return next;
+        });
+      };
+
+      const onToggle = (id) => setTasks(ts => ts.map(t => t.id===id ? {...t, done:!t.done} : t));
+      const onDelete = (id) => setTasks(ts => ts.filter(t => t.id!==id));
+      const onFlag = (id) => setTasks(ts => ts.map(t => t.id===id ? {...t, flag:!t.flag} : t));
+      const onAdd = (task) => setTasks(ts => [...ts, task]);
+
+      const dark = settings.dark;
+      const filtered = useMemo(() => search ? tasks.filter(t=>t.title.includes(search)) : tasks, [search, tasks]);
+
+      const titleMap = { today:'今日', cal:'カレンダー', lists:'リスト' };
+
+      const sceneContent = (
+        <div className={dark ? 'paper-bg-dark' : 'paper-bg'} style={{
+          width:'100%', height:'100%', overflow:'hidden', position:'relative',
+          color: dark ? '#F5F1E6' : '#2B2A26',
+          fontFamily: 'var(--hibi-font-body)',
+        }}>
+          <div style={{ position:'absolute', inset:0, overflowY:'auto' }}>
+            <div style={{ height: 0 }}/>
+            {tab === 'today' && (
+              <>
+                <TopBar dark={dark} searchValue={search} setSearchValue={setSearch}/>
+                <div style={{ padding:'8px 0 0' }}>
+                  <TodayScreen tasks={filtered} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={setDetail} dark={dark} density={settings.density}/>
+                </div>
+              </>
+            )}
+            {tab === 'cal' && (
+              <>
+                <TopBar dark={dark} searchValue={search} setSearchValue={setSearch}/>
+                <CalendarScreen tasks={filtered} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={setDetail} dark={dark} density={settings.density}/>
+              </>
+            )}
+            {tab === 'lists' && (
+              <>
+                <TopBar dark={dark} searchValue={search} setSearchValue={setSearch}/>
+                <ListsScreen tasks={filtered} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={setDetail} dark={dark} density={settings.density}/>
+              </>
+            )}
+          </div>
+
+          <TabBar tab={tab} setTab={setTab} onAdd={()=>setAddOpen(true)} dark={dark}/>
+
+          <AddTaskModal open={addOpen} onClose={()=>setAddOpen(false)} onAdd={onAdd} dark={dark}/>
+          <TaskDetail task={detail} onClose={()=>setDetail(null)} onToggle={onToggle} dark={dark}/>
+        </div>
+      );
+
+      return (
+        <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div data-screen-label={`Hibi ${titleMap[tab]}`}>
+            <IOSDevice dark={dark} width={390} height={844}>
+              {sceneContent}
+            </IOSDevice>
+          </div>
+          <TweaksPanel open={tweaksOpen} onClose={()=>setTweaksOpen(false)} settings={settings} setSettings={updateSettings}/>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
