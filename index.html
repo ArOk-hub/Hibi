@@ -89,7 +89,7 @@
     var useMemo = React.useMemo;
 
     const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-      "dark": false,
+      "dark": true,
       "density": "comfy",
       "font": "mincho",
       "accent": "#6B7FA8"
@@ -100,7 +100,27 @@
         const t = localStorage.getItem('hibi-tab');
         return (t === 'stats') ? 'today' : (t || 'today');
       });
-      const [tasks, setTasks] = useState(INITIAL_TASKS);
+      const [tasks, setTasks] = useState(() => {
+        try {
+          const raw = localStorage.getItem('hibi-tasks');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              // Revive Date fields (stored as ISO strings via JSON.stringify)
+              return parsed.map(t => ({
+                ...t,
+                due: t.due ? new Date(t.due) : undefined,
+                end: t.end ? new Date(t.end) : undefined,
+              }));
+            }
+          }
+        } catch(e) {}
+        return INITIAL_TASKS;
+      });
+      // Persist tasks on every change
+      useEffect(() => {
+        try { localStorage.setItem('hibi-tasks', JSON.stringify(tasks)); } catch(e) {}
+      }, [tasks]);
       const [lists, setListsState] = useState(() => {
         try {
           const raw = localStorage.getItem('hibi-lists');
