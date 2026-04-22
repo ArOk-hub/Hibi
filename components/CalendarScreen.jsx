@@ -1,3 +1,26 @@
+// Shared hook: current time, refreshed every minute
+function useNow() {
+  const [now, setNow] = React.useState(() => new Date());
+  React.useEffect(() => {
+    // align first tick to the next minute, then tick every 60s
+    let timeoutId, intervalId;
+    const msToNextMinute = 60000 - (Date.now() % 60000);
+    timeoutId = setTimeout(() => {
+      setNow(new Date());
+      intervalId = setInterval(() => setNow(new Date()), 60000);
+    }, msToNextMinute);
+    // also refresh when the tab regains visibility (was in background)
+    const onVis = () => { if (!document.hidden) setNow(new Date()); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
+  return now;
+}
+
 // Calendar screen — month overview with task-count dots, selected-day list
 
 function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, density }) {
@@ -9,7 +32,7 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
   const dim = dark ? 'rgba(245,241,230,0.25)' : 'rgba(43,42,38,0.25)';
-  const accent = '#7A8D3F';
+  const accent = '#3A5A8A';
 
   // Build calendar grid (6 weeks)
   const firstDow = month.getDay();
@@ -20,8 +43,32 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
     cells.push(d);
   }
 
-  const goPrev = () => setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1));
-  const goNext = () => setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1));
+  const goPrev = () => {
+    if (view === 'day') {
+      const d = new Date(selected); d.setDate(selected.getDate() - 1);
+      setSelected(d);
+      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    } else if (view === 'week') {
+      const d = new Date(selected); d.setDate(selected.getDate() - 7);
+      setSelected(d);
+      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    } else {
+      setMonth(new Date(month.getFullYear(), month.getMonth()-1, 1));
+    }
+  };
+  const goNext = () => {
+    if (view === 'day') {
+      const d = new Date(selected); d.setDate(selected.getDate() + 1);
+      setSelected(d);
+      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    } else if (view === 'week') {
+      const d = new Date(selected); d.setDate(selected.getDate() + 7);
+      setSelected(d);
+      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    } else {
+      setMonth(new Date(month.getFullYear(), month.getMonth()+1, 1));
+    }
+  };
 
   // tasks by date (YYYY-MM-DD)
   const taskByDay = {};
@@ -38,11 +85,21 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
       {/* Header */}
       <div style={{ padding:'8px 22px 4px' }}>
         <div style={{ fontSize:12, color: sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
-          {MONTH_JP[month.getMonth()]} · {month.getFullYear()}
+          {view === 'day'
+            ? `${MONTH_JP[selected.getMonth()]} · ${selected.getFullYear()}`
+            : `${MONTH_JP[month.getMonth()]} · ${month.getFullYear()}`}
         </div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4 }}>
           <div style={{ fontSize:36, fontWeight:700, color:text, letterSpacing:-0.8, fontFamily:'var(--hibi-font-display)' }}>
-            {month.getMonth()+1}月
+            {view === 'day'
+              ? `${selected.getMonth()+1}/${selected.getDate()}(${WEEK_JP[selected.getDay()]})`
+              : view === 'week'
+                ? (() => {
+                    const s = new Date(selected); s.setDate(selected.getDate() - selected.getDay());
+                    const e = new Date(s); e.setDate(s.getDate() + 6);
+                    return `${s.getMonth()+1}/${s.getDate()}–${e.getMonth()+1}/${e.getDate()}`;
+                  })()
+                : `${month.getMonth()+1}月`}
           </div>
           <div style={{ display:'flex', gap:6 }}>
             <button onClick={goPrev} style={navBtn(dark)}><Icon name="chevL" size={18} color={text}/></button>
@@ -133,7 +190,7 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
               {selectedTasks.map((t,i) => (
                 <div key={t.id} style={{ display:'flex', alignItems:'stretch' }}>
                   <div style={{ width:54, padding:'14px 0 0 14px', flexShrink:0, fontSize:12, color:sub, fontVariantNumeric:'tabular-nums', fontWeight:500 }}>
-                    {fmtTime(t.due)}
+                    {t.allDay ? '終日' : fmtTime(t.due)}
                   </div>
                   <div style={{ flex:1, borderLeft:`0.5px solid ${dark?'rgba(255,255,255,0.08)':'rgba(43,42,38,0.08)'}` }}>
                     <TaskCell task={t} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={onOpen} dark={dark} density={density}/>
@@ -209,8 +266,10 @@ function navBtn(dark) {
   };
 }
 
-// WEEK VIEW — 7 days × time axis
+// WEEK VIEW — 7 days × time axis (+ all-day band under headers)
 function WeekView({ date, tasks, onOpen, dark }) {
+  const now = useNow();
+  const weekScrollRef = React.useRef(null);
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const grid = dark ? 'rgba(255,255,255,0.06)' : 'rgba(43,42,38,0.06)';
@@ -220,8 +279,23 @@ function WeekView({ date, tasks, onOpen, dark }) {
   const start = new Date(date); start.setDate(date.getDate() - date.getDay());
   const days = Array.from({length:7}, (_,i) => { const d=new Date(start); d.setDate(start.getDate()+i); return d; });
 
-  const hours = Array.from({length:14}, (_,i)=>i+7); // 7-20
+  const hours = Array.from({length:24}, (_,i)=>i); // 0-23
   const HOUR_H = 44;
+
+  // Split into all-day vs timed
+  const allDayByDay = days.map(d => tasks.filter(t => t.allDay && sameDay(t.due, d)));
+  const hasAnyAllDay = allDayByDay.some(a => a.length > 0);
+  const ALLDAY_ROW_H = 20;
+  const maxAllDay = Math.max(1, ...allDayByDay.map(a => a.length));
+  const allDayBandH = hasAnyAllDay ? (maxAllDay * (ALLDAY_ROW_H + 2) + 6) : 0;
+
+  React.useEffect(() => {
+    if (!weekScrollRef.current) return;
+    const inWeek = days.some(d => sameDay(d, now));
+    const targetHour = inWeek ? Math.max(0, now.getHours() - 1) : 7;
+    weekScrollRef.current.scrollTop = targetHour * HOUR_H;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date.getTime()]);
 
   return (
     <div style={{ margin:'12px 12px 0', background: cardBg, borderRadius:18, border:`0.5px solid ${grid}`, overflow:'hidden' }}>
@@ -236,13 +310,49 @@ function WeekView({ date, tasks, onOpen, dark }) {
               <div style={{
                 fontSize:15, fontWeight:700, color: isToday?'#fff':text, marginTop:2,
                 width:24, height:24, borderRadius:12, margin:'2px auto 0', display:'flex', alignItems:'center', justifyContent:'center',
-                background: isToday ? '#7A8D3F' : 'transparent',
+                background: isToday ? '#3A5A8A' : 'transparent',
               }}>{d.getDate()}</div>
             </div>
           );
         })}
       </div>
+
+      {/* all-day band — right below date headers */}
+      {hasAnyAllDay && (
+        <div style={{
+          display:'grid', gridTemplateColumns:'36px repeat(7,1fr)',
+          borderBottom:`0.5px solid ${grid}`,
+          background: dark?'rgba(255,255,255,0.02)':'rgba(43,42,38,0.02)',
+        }}>
+          <div style={{ fontSize:9, color:sub, fontWeight:600, padding:'6px 4px 0 0', textAlign:'right', letterSpacing:0.5 }}>終日</div>
+          {days.map((d, di) => (
+            <div key={di} style={{
+              borderLeft:`0.5px solid ${grid}`,
+              padding:'3px 2px', display:'flex', flexDirection:'column', gap:2,
+              minHeight: allDayBandH,
+            }}>
+              {allDayByDay[di].map(t => {
+                const list = LISTS.find(l=>l.id===t.list);
+                return (
+                  <div key={t.id} onClick={()=>onOpen?.(t)} style={{
+                    background: list.color, color:'#fff',
+                    borderRadius:4, padding:'2px 4px',
+                    fontSize:9, fontWeight:600, lineHeight:'12px',
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                    cursor:'pointer', height: ALLDAY_ROW_H,
+                    display:'flex', alignItems:'center',
+                  }}>
+                    {t.title}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* grid */}
+      <div ref={weekScrollRef} style={{ maxHeight: 'calc(100vh - 320px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
       <div style={{ position:'relative', display:'grid', gridTemplateColumns:'36px repeat(7,1fr)' }}>
         <div>
           {hours.map(h => (
@@ -252,10 +362,11 @@ function WeekView({ date, tasks, onOpen, dark }) {
         {days.map((d,di) => (
           <div key={di} style={{ position:'relative', borderLeft:`0.5px solid ${grid}` }}>
             {hours.map(h => <div key={h} style={{ height:HOUR_H, borderBottom:`0.5px solid ${grid}` }}/>)}
-            {tasks.filter(t => sameDay(t.due, d) && t.due.getHours()>=7 && t.due.getHours()<21).map(t => {
+            {tasks.filter(t => !t.allDay && sameDay(t.due, d)).map(t => {
               const list = LISTS.find(l=>l.id===t.list);
-              const top = (t.due.getHours() - 7) * HOUR_H + (t.due.getMinutes()/60)*HOUR_H;
-              const height = Math.max(22, (t.dur/60)*HOUR_H);
+              const top = t.due.getHours() * HOUR_H + (t.due.getMinutes()/60)*HOUR_H;
+              const durMin = t.end ? (t.end - t.due)/60000 : (t.dur || 30);
+              const height = Math.max(22, (durMin/60)*HOUR_H);
               return (
                 <div key={t.id} onClick={()=>onOpen?.(t)} style={{
                   position:'absolute', top, left:2, right:2, height,
@@ -266,34 +377,83 @@ function WeekView({ date, tasks, onOpen, dark }) {
                   padding:'3px 4px', fontSize:9, fontWeight:600, overflow:'hidden', lineHeight:'11px',
                   cursor:'pointer',
                 }}>
-                  {!t.evt && '○ '}{t.title}
+                  {!t.evt && '○ '}{t.title}{t.repeat && t.repeat!=='none' ? ' ↻' : ''}
                 </div>
               );
             })}
-            {sameDay(d, TODAY) && (
-              <div style={{ position:'absolute', left:0, right:0, top: (TODAY.getHours()-7)*HOUR_H, height:1.5, background:'#B84A3B', zIndex:2 }}>
-                <div style={{ position:'absolute', left:-3, top:-3, width:7, height:7, borderRadius:4, background:'#B84A3B' }}/>
-              </div>
-            )}
+            {sameDay(d, now) && (() => {
+              const mins = now.getHours()*60 + now.getMinutes();
+              const top = (mins / 60) * HOUR_H;
+              return (
+                <div style={{ position:'absolute', left:0, right:0, top, height:1.5, background:'#B84A3B', zIndex:2 }}>
+                  <div style={{ position:'absolute', left:-3, top:-3, width:7, height:7, borderRadius:4, background:'#B84A3B' }}/>
+                </div>
+              );
+            })()}
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
 }
 
-// DAY VIEW — single-day timeline with events + tasks
+// DAY VIEW — single-day timeline with all-day band + timed events
 function DayView({ date, tasks, onOpen, dark }) {
+  const now = useNow();
+  const scrollRef = React.useRef(null);
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const grid = dark ? 'rgba(255,255,255,0.06)' : 'rgba(43,42,38,0.06)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
 
-  const hours = Array.from({length:16}, (_,i)=>i+6); // 6-21
+  const hours = Array.from({length:24}, (_,i)=>i); // 0-23
   const HOUR_H = 56;
+
+  const allDayTasks = tasks.filter(t => t.allDay);
+  const timedTasks = tasks.filter(t => !t.allDay);
+
+  // On mount (and when the selected date changes), scroll to a sensible hour:
+  // current hour if viewing today, else 7am.
+  React.useEffect(() => {
+    if (!scrollRef.current) return;
+    const targetHour = sameDay(date, now) ? Math.max(0, now.getHours() - 1) : 7;
+    scrollRef.current.scrollTop = targetHour * HOUR_H;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date.getTime()]);
 
   return (
     <div style={{ margin:'12px 16px 0', background: cardBg, borderRadius:18, border:`0.5px solid ${grid}`, overflow:'hidden' }}>
+      {/* All-day band — sits above the 0:00 timeline row */}
+      {allDayTasks.length > 0 && (
+        <div style={{
+          display:'grid', gridTemplateColumns:'48px 1fr',
+          borderBottom:`0.5px solid ${grid}`,
+          background: dark?'rgba(255,255,255,0.02)':'rgba(43,42,38,0.02)',
+        }}>
+          <div style={{ fontSize:10, color:sub, fontWeight:700, padding:'10px 6px 0 0', textAlign:'right', letterSpacing:1 }}>終日</div>
+          <div style={{ borderLeft:`0.5px solid ${grid}`, padding:'8px 8px', display:'flex', flexDirection:'column', gap:4 }}>
+            {allDayTasks.map(t => {
+              const list = LISTS.find(l=>l.id===t.list);
+              return (
+                <div key={t.id} onClick={()=>onOpen?.(t)} style={{
+                  background: list.color, color:'#fff',
+                  borderRadius:8, padding:'6px 10px',
+                  fontSize:12, fontWeight:600, cursor:'pointer',
+                  display:'flex', alignItems:'center', gap:6,
+                }}>
+                  <Icon name="calendar" size={11} color="#fff"/>
+                  <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {t.title}{t.repeat && t.repeat!=='none' ? ' ↻' : ''}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div ref={scrollRef} style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
       <div style={{ position:'relative', display:'grid', gridTemplateColumns:'48px 1fr' }}>
         <div>
           {hours.map(h => (
@@ -302,10 +462,12 @@ function DayView({ date, tasks, onOpen, dark }) {
         </div>
         <div style={{ position:'relative', borderLeft:`0.5px solid ${grid}` }}>
           {hours.map(h => <div key={h} style={{ height:HOUR_H, borderBottom:`0.5px solid ${grid}` }}/>)}
-          {tasks.filter(t => t.due.getHours()>=6 && t.due.getHours()<22).map(t => {
+          {timedTasks.map(t => {
             const list = LISTS.find(l=>l.id===t.list);
-            const top = (t.due.getHours() - 6) * HOUR_H + (t.due.getMinutes()/60)*HOUR_H;
-            const height = Math.max(32, (t.dur/60)*HOUR_H);
+            const top = t.due.getHours() * HOUR_H + (t.due.getMinutes()/60)*HOUR_H;
+            const durMin = t.end ? (t.end - t.due)/60000 : (t.dur || 30);
+            const height = Math.max(32, (durMin/60)*HOUR_H);
+            const endLabel = t.end ? fmtTime(t.end) : null;
             return (
               <div key={t.id} onClick={()=>onOpen?.(t)} style={{
                 position:'absolute', top, left:8, right:8, height,
@@ -318,18 +480,28 @@ function DayView({ date, tasks, onOpen, dark }) {
               }}>
                 <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                   {!t.evt && <div style={{ width:12, height:12, borderRadius:6, border:`1.5px solid ${t.evt?'#fff':list.color}` }}/>}
-                  <span>{t.title}</span>
+                  <span>{t.title}{t.repeat && t.repeat!=='none' ? ' ↻' : ''}</span>
                 </div>
-                <div style={{ fontSize:11, fontWeight:500, opacity:0.85 }}>{fmtTime(t.due)} · {t.dur}分</div>
+                <div style={{ fontSize:11, fontWeight:500, opacity:0.85 }}>
+                  {fmtTime(t.due)}{endLabel ? `–${endLabel}` : ''} · {Math.round(durMin)}分
+                </div>
               </div>
             );
           })}
-          {sameDay(date, TODAY) && (
-            <div style={{ position:'absolute', left:0, right:0, top: (TODAY.getHours()-6)*HOUR_H, height:2, background:'#B84A3B', zIndex:3 }}>
-              <div style={{ position:'absolute', left:-4, top:-4, width:10, height:10, borderRadius:5, background:'#B84A3B' }}/>
-            </div>
-          )}
+          {sameDay(date, now) && (() => {
+            const mins = now.getHours()*60 + now.getMinutes();
+            const top = (mins / 60) * HOUR_H;
+            return (
+              <div style={{ position:'absolute', left:0, right:0, top, height:2, background:'#B84A3B', zIndex:3, transition:'top 400ms ease-out' }}>
+                <div style={{ position:'absolute', left:-4, top:-4, width:10, height:10, borderRadius:5, background:'#B84A3B' }}/>
+                <div style={{ position:'absolute', right:6, top:-18, fontSize:10, fontWeight:700, color:'#B84A3B', fontVariantNumeric:'tabular-nums' }}>
+                  {String(now.getHours()).padStart(2,'0')}:{String(now.getMinutes()).padStart(2,'0')}
+                </div>
+              </div>
+            );
+          })()}
         </div>
+      </div>
       </div>
     </div>
   );

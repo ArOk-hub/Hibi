@@ -4,7 +4,7 @@
 var useState = React.useState;
 var useRef = React.useRef;
 
-const ACT_COMPLETE = { color: '#7A8D3F', icon: 'check', label: '完了' };
+const ACT_COMPLETE = { color: '#3A5A8A', icon: 'check', label: '完了' };
 const ACT_DELETE   = { color: '#B84A3B', icon: 'trash', label: '削除' };
 const ACT_FLAG     = { color: '#C29B4A', icon: 'flag',  label: 'フラグ' };
 
@@ -129,8 +129,8 @@ function TaskCell({ task, onToggle, onDelete, onFlag, onOpen, dark, density='com
           onClick={(e)=>{ e.stopPropagation(); onToggle(task.id); }}
           style={{
             width: 26, height: 26, borderRadius: 13,
-            border: `1.7px solid ${task.done ? '#7A8D3F' : (dark ? 'rgba(245,241,230,0.35)' : 'rgba(43,42,38,0.28)')}`,
-            background: task.done ? '#7A8D3F' : 'transparent',
+            border: `1.7px solid ${task.done ? '#3A5A8A' : (dark ? 'rgba(245,241,230,0.35)' : 'rgba(43,42,38,0.28)')}`,
+            background: task.done ? '#3A5A8A' : 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, transition: 'all 220ms cubic-bezier(.2,.8,.2,1)',
             transform: `scale(${task.done ? 1 : 0.98 + checkFill*0.06})`,
@@ -147,8 +147,24 @@ function TaskCell({ task, onToggle, onDelete, onFlag, onOpen, dark, density='com
           }}>{task.title}</div>
           {density !== 'compact' && (
             <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, fontSize:12, color: task.overdue && !task.done ? ACT_DELETE.color : sub }}>
-              {task.due && <span>{fmtTime(task.due)}</span>}
-              {list && <><span style={{ opacity:0.5 }}>·</span><span>{list.emoji} {list.name}</span></>}
+              {task.due && <span>{task.allDay ? '終日' : fmtTime(task.due)}</span>}
+              {list && <><span style={{ opacity:0.5 }}>·</span>
+                {list.image
+                  ? <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                      <span style={{ width:14, height:14, borderRadius:4, overflow:'hidden', display:'inline-block' }}>
+                        <img src={list.image} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
+                      </span>
+                      {list.name}
+                    </span>
+                  : <span>{list.emoji} {list.name}</span>}
+              </>}
+              {task.repeat && task.repeat !== 'none' && <>
+                <span style={{ opacity:0.5 }}>·</span>
+                <span style={{ display:'inline-flex', alignItems:'center', gap:3, color:'#6B7FA8', fontWeight:600 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0114-5l2 2M20 12a8 8 0 01-14 5l-2-2M18 3v4h-4M6 21v-4h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {repeatBadgeLabel(task.repeat, task.repeatDays)}
+                </span>
+              </>}
               {task.sub && task.sub.length > 0 && <><span style={{ opacity:0.5 }}>·</span><span>{task.sub.filter(s=>s.d).length}/{task.sub.length}</span></>}
               {task.flag && <span style={{ color: ACT_FLAG.color }}>⚑</span>}
               {task.overdue && !task.done && <span style={{ color: ACT_DELETE.color, fontWeight:600 }}>期限切れ</span>}

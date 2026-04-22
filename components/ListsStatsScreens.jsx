@@ -1,6 +1,6 @@
 // Lists & Stats screens
 
-function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density }) {
+function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density, onOpenCategoryManager }) {
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
@@ -22,6 +22,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density 
     const open = listTasks.filter(t => !t.done);
     const done = listTasks.filter(t => t.done);
     const stroke = dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)';
+    if (!l) { setTimeout(()=>setOpenList(null), 0); return null; }
     return (
       <div style={{ padding:'0 0 120px', animation:'fade-in 220ms' }}>
         <div style={{ padding:'8px 16px 18px', display:'flex', alignItems:'center', gap:10 }}>
@@ -31,11 +32,12 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density 
           }}>
             <Icon name="chevL" size={18} color={text}/>
           </button>
+          <CategoryIcon l={l} size={36}/>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>カテゴリ</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:2 }}>
-              <div style={{ fontSize:32, fontWeight:700, color:text, letterSpacing:-0.8, fontFamily:'var(--hibi-font-display)' }}>
-                {l.emoji} {l.name}
+              <div style={{ fontSize:28, fontWeight:700, color:text, letterSpacing:-0.8, fontFamily:'var(--hibi-font-display)' }}>
+                {l.name}
               </div>
               <div style={{ fontSize:14, color:sub, fontWeight:500 }}>{open.length}件</div>
             </div>
@@ -88,7 +90,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density 
       <div style={{ padding:'0 16px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
         {filters.slice(0,4).map(f => {
           const ic = { all:'bars', today:'today', sched:'calendar', flag:'flag' }[f.id];
-          const c = { all:'#6B7FA8', today:'#7A8D3F', sched:'#B84A3B', flag:'#C29B4A' }[f.id];
+          const c = { all:'#6B7FA8', today:'#3A5A8A', sched:'#B84A3B', flag:'#C29B4A' }[f.id];
           return (
             <div key={f.id} onClick={()=>setFilter(f.id)} style={{
               background: cardBg, borderRadius: 14, padding: '12px 14px',
@@ -109,8 +111,14 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density 
 
       {/* My Lists */}
       <div style={{ marginTop:20 }}>
-        <div style={{ padding:'0 24px 8px', fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
-          カテゴリ
+        <div style={{ padding:'0 24px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
+            カテゴリ
+          </div>
+          <button onClick={onOpenCategoryManager} style={{
+            border:'none', background:'transparent', color:'#3A5A8A',
+            fontSize:13, fontWeight:700, cursor:'pointer', padding:'2px 6px',
+          }}>編集</button>
         </div>
         <div style={{ margin:'0 16px', borderRadius:18, overflow:'hidden', background:cardBg,
           border:`0.5px solid ${dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)'}` }}>
@@ -121,38 +129,18 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density 
                 display:'flex', alignItems:'center', gap:12, padding:'14px 16px', cursor:'pointer',
                 borderBottom: i<LISTS.length-1 ? `0.5px solid ${dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)'}` : 'none',
               }}>
-                <div style={{
-                  width:32, height:32, borderRadius:10, background: l.color+'22', color:l.color,
-                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
-                }}>{l.emoji}</div>
+                <CategoryIcon l={l} size={32}/>
                 <div style={{ flex:1, fontSize:15, fontWeight:500, color:text }}>{l.name}</div>
                 <div style={{ fontSize:14, color:sub, fontVariantNumeric:'tabular-nums' }}>{count}</div>
                 <Icon name="chev" size={14} color={sub}/>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div style={{ marginTop: 20, padding:'0 24px' }}>
-        <div style={{ fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600, marginBottom:10 }}>
-          タグ
-        </div>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-          {[
-            { label:'重要', c:'#B84A3B' },
-            { label:'作業中', c:'#7A8D3F' },
-            { label:'待ち', c:'#C29B4A' },
-            { label:'アイデア', c:'#6B7FA8' },
-            { label:'家族', c:'#B84A3B' },
-            { label:'今週', c:'#7A8D3F' },
-          ].map(t => (
-            <div key={t.label} style={{
-              padding:'6px 12px', borderRadius:100, fontSize:12, fontWeight:600,
-              background: t.c+'1A', color: t.c, border: `0.5px solid ${t.c}33`,
-            }}>#{t.label}</div>
-          ))}
+          {LISTS.length === 0 && (
+            <div style={{ padding:'28px 14px', textAlign:'center', fontSize:13, color:sub }}>
+              「編集」からカテゴリを追加
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -163,7 +151,7 @@ function StatsScreen({ tasks, dark }) {
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
-  const accent = '#7A8D3F';
+  const accent = '#3A5A8A';
   const stroke = dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)';
 
   const weekPct = Math.round(STATS.weekDone/STATS.weekTotal*100);
@@ -181,7 +169,7 @@ function StatsScreen({ tasks, dark }) {
       </div>
 
       {/* Streak hero */}
-      <div style={{ margin:'0 16px', padding:'20px', borderRadius:22, background: `linear-gradient(135deg, ${accent}, #B3B86E)`, color:'#fff', position:'relative', overflow:'hidden' }}>
+      <div style={{ margin:'0 16px', padding:'20px', borderRadius:22, background: `linear-gradient(135deg, ${accent}, #7A9BC4)`, color:'#fff', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', right:-10, top:-10, fontSize:120, opacity:0.15 }}>🔥</div>
         <div style={{ fontSize:12, fontWeight:600, letterSpacing:2, textTransform:'uppercase', opacity:0.85 }}>連続達成</div>
         <div style={{ display:'flex', alignItems:'baseline', gap:6, marginTop:6 }}>

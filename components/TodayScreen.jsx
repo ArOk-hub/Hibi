@@ -41,7 +41,7 @@ function TodayScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, focus, d
         </div>
         {/* progress bar */}
         <div style={{ marginTop: 14, height: 6, borderRadius: 3, background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(43,42,38,0.08)', overflow:'hidden' }}>
-          <div style={{ width: `${pct}%`, height:'100%', background:'linear-gradient(90deg,#7A8D3F,#B3B86E)', transition:'width 400ms' }}/>
+          <div style={{ width: `${pct}%`, height:'100%', background:'linear-gradient(90deg,#3A5A8A,#7A9BC4)', transition:'width 400ms' }}/>
         </div>
       </div>
 
@@ -85,7 +85,7 @@ function TimelineRow({ task, onToggle, onDelete, onFlag, onOpen, dark, last, den
       <div style={{
         width: 54, padding: '14px 0 0 14px', flexShrink: 0,
         fontSize: 12, color: sub, fontVariantNumeric:'tabular-nums', fontWeight:500,
-      }}>{fmtTime(task.due)}</div>
+      }}>{task.allDay ? '終日' : fmtTime(task.due)}</div>
       <div style={{ flex:1, borderLeft: `0.5px solid ${dark?'rgba(255,255,255,0.08)':'rgba(43,42,38,0.08)'}` }}>
         <TaskCell task={task} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={onOpen} dark={dark} density={density}/>
       </div>

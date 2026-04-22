@@ -1,16 +1,31 @@
 // Sample data + helpers for Hibi
 // Warm, Japanese-inspired todo app
 
-const LISTS = [
-  { id: 'work',     name: '仕事',       emoji: '💼', color: '#7A8D3F' },
+// Default categories (can be customized by user, persisted to localStorage)
+const DEFAULT_LISTS = [
+  { id: 'work',     name: '仕事',       emoji: '💼', color: '#3A5A8A' },
   { id: 'private',  name: 'プライベート', emoji: '🍵', color: '#B84A3B' },
   { id: 'shop',     name: '買い物',     emoji: '🛒', color: '#C29B4A' },
   { id: 'health',   name: '健康',       emoji: '🌿', color: '#5E8C6A' },
   { id: 'study',    name: '学び',       emoji: '📚', color: '#6B7FA8' },
 ];
+// `LISTS` is the live array — App mutates window.LISTS when user edits categories.
+let LISTS = DEFAULT_LISTS;
 
-// Today is 2026-04-20 (Mon)
-const TODAY = new Date(2026, 3, 20);
+// Palette of colors available when creating/editing a category
+const LIST_COLOR_PALETTE = [
+  '#3A5A8A', '#B84A3B', '#C29B4A', '#5E8C6A',
+  '#6B7FA8', '#8F6A9B', '#3A3631', '#C97B5E',
+];
+// Emoji suggestions for category icons
+const LIST_EMOJI_PALETTE = [
+  '💼','🍵','🛒','🌿','📚','🏠','👪','💪',
+  '🎨','✈️','🔧','🍽️','⚽','🎮','🎵','🌸',
+  '☕','📖','✍️','💰','📦','🐶','🐱','⭐',
+];
+
+// Today = actual current date (midnight local time)
+const TODAY = (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
 
 const T = (y,m,d,h=0,mi=0) => new Date(y,m,d,h,mi);
 
@@ -52,6 +67,7 @@ const fmtDate = (d) => `${d.getMonth()+1}月${d.getDate()}日`;
 const fmtDateFull = (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${WEEK_JP[d.getDay()]})`;
 
 Object.assign(window, {
-  LISTS, TODAY, INITIAL_TASKS, STATS, WEEK_JP, MONTH_JP, PRI,
+  LISTS, DEFAULT_LISTS, LIST_COLOR_PALETTE, LIST_EMOJI_PALETTE,
+  TODAY, INITIAL_TASKS, STATS, WEEK_JP, MONTH_JP, PRI,
   sameDay, fmtTime, fmtDate, fmtDateFull,
 });

@@ -1,7 +1,7 @@
 // Hibi 日々 — Service Worker
 // Cache-first strategy for offline PWA support.
 
-const CACHE = 'hibi-v1';
+const CACHE = 'hibi-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -20,6 +20,7 @@ const ASSETS = [
   './components/ListsStatsScreens.jsx',
   './components/AddTaskModal.jsx',
   './components/TaskDetail.jsx',
+  './components/CategoryManager.jsx',
   './components/Chrome.jsx',
 ];
 

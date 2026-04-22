@@ -30,6 +30,10 @@ const Icon = ({ name, size = 22, color = 'currentColor', strokeWidth = 1.7 }) =>
     check: <>
       <path d="M5 12l4 4 10-10" stroke={color} strokeWidth={sw+0.5} strokeLinecap="round" strokeLinejoin="round" fill="none"/>
     </>,
+    pencil: <>
+      <path d="M4 20l4-1 10-10-3-3L5 16l-1 4z" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M13 6l3 3" stroke={color} strokeWidth={sw} strokeLinecap="round"/>
+    </>,
     trash: <>
       <path d="M4 7h16M9 7V5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 5v2" stroke={color} strokeWidth={sw} strokeLinecap="round" fill="none"/>
       <path d="M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12" stroke={color} strokeWidth={sw} strokeLinecap="round" fill="none"/>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <title>Hibi 日々 — Todo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
-<meta name="theme-color" content="#7A8D3F"/>
+<meta name="theme-color" content="#3A5A8A"/>
 <meta name="description" content="日々の積み重ねを、美しく。カレンダー連動の和モダンTodoアプリ。"/>
 <link rel="manifest" href="./manifest.webmanifest"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -80,6 +80,7 @@
   <script type="text/babel" src="components/ListsStatsScreens.jsx"></script>
   <script type="text/babel" src="components/AddTaskModal.jsx"></script>
   <script type="text/babel" src="components/TaskDetail.jsx"></script>
+  <script type="text/babel" src="components/CategoryManager.jsx"></script>
   <script type="text/babel" src="components/Chrome.jsx"></script>
 
   <script type="text/babel" data-presets="react">
@@ -88,10 +89,10 @@
     var useMemo = React.useMemo;
 
     const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-      "dark": true,
+      "dark": false,
       "density": "comfy",
-      "font": "gothic",
-      "accent": "#7A8D3F"
+      "font": "mincho",
+      "accent": "#6B7FA8"
     }/*EDITMODE-END*/;
 
     function App() {
@@ -100,7 +101,22 @@
         return (t === 'stats') ? 'today' : (t || 'today');
       });
       const [tasks, setTasks] = useState(INITIAL_TASKS);
+      const [lists, setListsState] = useState(() => {
+        try {
+          const raw = localStorage.getItem('hibi-lists');
+          if (raw) { const parsed = JSON.parse(raw); if (Array.isArray(parsed) && parsed.length) return parsed; }
+        } catch(e) {}
+        return DEFAULT_LISTS;
+      });
+      // keep window.LISTS synced so non-prop-threaded reads in other components see the latest
+      useEffect(() => {
+        window.LISTS = lists;
+        try { localStorage.setItem('hibi-lists', JSON.stringify(lists)); } catch(e) {}
+      }, [lists]);
+      const setLists = setListsState;
+      const [categoryMgrOpen, setCategoryMgrOpen] = useState(false);
       const [addOpen, setAddOpen] = useState(false);
+      const [editingTask, setEditingTask] = useState(null);
       const [detail, setDetail] = useState(null);
       const [search, setSearch] = useState('');
       const [settings, setSettings] = useState(TWEAK_DEFAULTS);
@@ -134,6 +150,9 @@
       const onDelete = (id) => setTasks(ts => ts.filter(t => t.id!==id));
       const onFlag = (id) => setTasks(ts => ts.map(t => t.id===id ? {...t, flag:!t.flag} : t));
       const onAdd = (task) => setTasks(ts => [...ts, task]);
+      const onUpdate = (updated) => setTasks(ts => ts.map(t => t.id===updated.id ? updated : t));
+      // When the user taps "編集" in the detail sheet, switch to the add modal in edit mode.
+      const onStartEdit = (task) => { setEditingTask(task); setDetail(null); setAddOpen(true); };
 
       const dark = settings.dark;
       const filtered = useMemo(() => search ? tasks.filter(t=>t.title.includes(search)) : tasks, [search, tasks]);
@@ -165,15 +184,40 @@
             {tab === 'lists' && (
               <>
                 <TopBar dark={dark} searchValue={search} setSearchValue={setSearch}/>
-                <ListsScreen tasks={filtered} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={setDetail} dark={dark} density={settings.density}/>
+                <ListsScreen
+                  tasks={filtered}
+                  onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={setDetail}
+                  onOpenCategoryManager={()=>setCategoryMgrOpen(true)}
+                  dark={dark} density={settings.density}
+                />
               </>
             )}
           </div>
 
-          <TabBar tab={tab} setTab={setTab} onAdd={()=>setAddOpen(true)} dark={dark}/>
+          <TabBar tab={tab} setTab={setTab} onAdd={()=>{ setEditingTask(null); setAddOpen(true); }} dark={dark}/>
 
-          <AddTaskModal open={addOpen} onClose={()=>setAddOpen(false)} onAdd={onAdd} dark={dark}/>
-          <TaskDetail task={detail} onClose={()=>setDetail(null)} onToggle={onToggle} dark={dark}/>
+          <AddTaskModal
+            open={addOpen}
+            onClose={()=>{ setAddOpen(false); setEditingTask(null); }}
+            onAdd={onAdd}
+            onUpdate={onUpdate}
+            editTask={editingTask}
+            dark={dark}
+          />
+          <TaskDetail
+            task={detail}
+            onClose={()=>setDetail(null)}
+            onToggle={onToggle}
+            onEdit={onStartEdit}
+            onDelete={onDelete}
+            dark={dark}
+          />
+          <CategoryManager
+            open={categoryMgrOpen} onClose={()=>setCategoryMgrOpen(false)}
+            lists={lists} setLists={setLists}
+            tasks={tasks} setTasks={setTasks}
+            dark={dark}
+          />
         </div>
       );
 

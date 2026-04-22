@@ -27,7 +27,7 @@ function TabBar({ tab, setTab, onAdd, dark }) {
     { id:'cal',   label:'カレンダー', icon:'calendar' },
     { id:'lists', label:'リスト', icon:'lists' },
   ];
-  const accent = '#7A8D3F';
+  const accent = '#3A5A8A';
   return (
     <>
       {/* FAB */}
@@ -120,7 +120,7 @@ function TweaksPanel({ open, onClose, settings, setSettings }) {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0 2px' }}>
         <span style={{ fontSize:13, color:'rgba(255,255,255,0.8)', fontWeight:500 }}>アクセント</span>
         <div style={{ display:'flex', gap:6 }}>
-          {['#7A8D3F','#B84A3B','#C29B4A','#6B7FA8','#9B6B8E'].map(swatch)}
+          {['#3A5A8A','#B84A3B','#C29B4A','#6B7FA8','#9B6B8E'].map(swatch)}
         </div>
       </div>
     </div>
