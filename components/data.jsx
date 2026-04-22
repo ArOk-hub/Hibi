@@ -14,28 +14,7 @@ const TODAY = new Date(2026, 3, 20);
 
 const T = (y,m,d,h=0,mi=0) => new Date(y,m,d,h,mi);
 
-const INITIAL_TASKS = [
-  { id: 't1',  title: '朝会の議事メモを送る',           list: 'work',    pri: 'high', done: true,  due: T(2026,3,20,9,30),  dur: 15 },
-  { id: 't2',  title: 'Q2レビュー資料を仕上げる',       list: 'work',    pri: 'high', done: false, due: T(2026,3,20,11,0),  dur: 90, sub: [{t:'構成ドラフト',d:true},{t:'数値の差し替え',d:true},{t:'レビュー依頼',d:false}], note: '営業部の数字は田中さん待ち' },
-  { id: 't3',  title: 'お昼:定食屋「七草」',             list: 'private', pri: 'low',  done: false, due: T(2026,3,20,12,30), dur: 45 },
-  { id: 't4',  title: 'デザインレビュー(オンライン)',     list: 'work',    pri: 'mid',  done: false, due: T(2026,3,20,15,0),  dur: 60, evt: true },
-  { id: 't5',  title: 'ヨガスタジオ 予約',                list: 'health',  pri: 'mid',  done: false, due: T(2026,3,20,18,30), dur: 60 },
-  { id: 't6',  title: '牛乳・卵・バジル',                 list: 'shop',    pri: 'low',  done: false, due: T(2026,3,20,19,30), dur: 20 },
-  { id: 't7',  title: '読書:「日々是好日」40pまで',       list: 'study',   pri: 'low',  done: false, due: T(2026,3,20,22,0),  dur: 30 },
-
-  // Tomorrow & future
-  { id: 't8',  title: '部門ミーティング',                list: 'work',    pri: 'mid',  done: false, due: T(2026,3,21,10,0),  dur: 60, evt: true },
-  { id: 't9',  title: '歯医者の予約',                    list: 'health',  pri: 'high', done: false, due: T(2026,3,21,14,30), dur: 30, evt: true },
-  { id: 't10', title: '母の誕生日プレゼント選び',         list: 'private', pri: 'high', done: false, due: T(2026,3,22,11,0),  dur: 120, flag: true },
-  { id: 't11', title: '確定申告の書類確認',             list: 'work',    pri: 'mid',  done: false, due: T(2026,3,23,19,0),  dur: 45 },
-  { id: 't12', title: '映画「三月のライオン」',          list: 'private', pri: 'low',  done: false, due: T(2026,3,25,19,30), dur: 120, evt: true },
-  { id: 't13', title: '月末レポート提出',                list: 'work',    pri: 'high', done: false, due: T(2026,3,30,17,0),  dur: 60 },
-
-  // Yesterday — one overdue undone, the rest done
-  { id: 't14', title: '家賃の振込',                     list: 'private', pri: 'high', done: false, due: T(2026,3,19,18,0),  dur: 10, overdue: true },
-  { id: 't15', title: 'ランニング 5km',                  list: 'health',  pri: 'mid',  done: true,  due: T(2026,3,19,7,0),   dur: 30 },
-  { id: 't16', title: '見積書の返信',                   list: 'work',    pri: 'mid',  done: true,  due: T(2026,3,19,14,0),  dur: 20 },
-];
+const INITIAL_TASKS = [];
 
 // Streak / stats (hard-coded for demo)
 const STATS = {
