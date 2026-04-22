@@ -213,47 +213,105 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
 function NotificationsCTA({ dark, accent }) {
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
-  const [perm, setPerm] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+  const supported = typeof Notification !== 'undefined';
+  const [perm, setPerm] = useState(supported ? Notification.permission : 'default');
   const enabled = perm === 'granted';
 
+  // Detect standalone (iOS: notifications require Home-Screen-installed PWA on 16.4+)
+  const isStandalone = (typeof window !== 'undefined') && (
+    window.matchMedia?.('(display-mode: standalone)')?.matches ||
+    window.navigator?.standalone === true
+  );
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
   const request = async () => {
-    if (typeof Notification === 'undefined') { alert('この端末では通知に対応していません'); return; }
+    if (!supported) { alert('この端末では通知に対応していません'); return; }
     const p = await Notification.requestPermission();
     setPerm(p);
-    if (p === 'granted') {
-      try {
-        new Notification('Hibi 日々', {
-          body: '通知をオンにしました。リマインダー時刻にお知らせします。',
-          icon: undefined,
+    if (p === 'granted') sendTest();
+  };
+  const sendTest = async () => {
+    try {
+      const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+      if (reg?.showNotification) {
+        await reg.showNotification('Hibi 日々', {
+          body: 'テスト通知です。リマインダー時刻にお知らせします。',
+          icon: './icon-192.png', badge: './icon-192.png',
+          tag: 'hibi-test', renotify: true,
         });
-      } catch(e) {}
+      } else {
+        new Notification('Hibi 日々', { body: 'テスト通知です。' });
+      }
+    } catch(e) {
+      alert('通知送信に失敗しました: ' + e.message);
     }
   };
 
+  const needsInstall = isIOS && !isStandalone;
+
   return (
     <div style={{ margin:'24px 16px 0', padding:'16px', borderRadius:18,
-      background: dark?'rgba(122,141,63,0.14)':'rgba(122,141,63,0.08)',
+      background: dark?'rgba(58,90,138,0.16)':'rgba(58,90,138,0.08)',
       border:`0.5px solid ${accent}33`,
-      display:'flex', alignItems:'center', gap:12,
+      display:'flex', flexDirection:'column', gap:12,
     }}>
-      <div style={{ width:38, height:38, borderRadius:19, background: accent, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
-        <Icon name="bell" size={18} color="#fff"/>
-      </div>
-      <div style={{ flex:1 }}>
-        <div style={{ fontSize:14, fontWeight:600, color:text }}>
-          {enabled ? '通知はオンになっています' : 'iPhoneに通知を送る'}
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:38, height:38, borderRadius:19, background: accent, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
+          <Icon name="bell" size={18} color="#fff"/>
         </div>
-        <div style={{ fontSize:12, color:sub, marginTop:2 }}>
-          {enabled ? 'リマインダー時刻にお知らせします' : '期限とリマインダーをお知らせ'}
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:14, fontWeight:600, color:text }}>
+            {enabled ? '通知はオンになっています' : 'iPhoneに通知を送る'}
+          </div>
+          <div style={{ fontSize:12, color:sub, marginTop:2 }}>
+            {enabled
+              ? 'リマインダー時刻にお知らせします'
+              : (needsInstall
+                ? 'ホーム画面に追加してから許可してください'
+                : '期限とリマインダーをお知らせ')}
+          </div>
         </div>
+        <button onClick={enabled ? sendTest : request} disabled={!supported || (needsInstall && !enabled)} style={{
+          border:'none',
+          background: (!supported || (needsInstall && !enabled))
+            ? (dark?'rgba(255,255,255,0.12)':'rgba(43,42,38,0.08)')
+            : accent,
+          color: (!supported || (needsInstall && !enabled)) ? sub : '#fff',
+          padding:'8px 14px', borderRadius:100,
+          fontSize:13, fontWeight:600,
+          cursor: (!supported || (needsInstall && !enabled)) ? 'default' : 'pointer',
+          whiteSpace:'nowrap',
+        }}>{!supported ? '非対応' : (enabled ? 'テスト送信' : '許可')}</button>
       </div>
-      <button onClick={request} disabled={enabled} style={{
-        border:'none',
-        background: enabled ? (dark?'rgba(255,255,255,0.12)':'rgba(43,42,38,0.08)') : accent,
-        color: enabled ? sub : '#fff',
-        padding:'8px 14px', borderRadius:100,
-        fontSize:13, fontWeight:600, cursor: enabled?'default':'pointer',
-      }}>{enabled ? 'オン' : '許可'}</button>
+      {/* iOS install hint */}
+      {needsInstall && (
+        <div style={{
+          fontSize:11, color:sub, lineHeight:'16px',
+          padding:'8px 10px', borderRadius:8,
+          background: dark?'rgba(255,255,255,0.04)':'rgba(43,42,38,0.04)',
+        }}>
+          iOS では通知を使うには、Safari の共有メニューから「ホーム画面に追加」してアプリとして起動する必要があります。
+        </div>
+      )}
+      {/* Foreground-only caveat */}
+      {enabled && (
+        <div style={{
+          fontSize:11, color:sub, lineHeight:'16px',
+          padding:'8px 10px', borderRadius:8,
+          background: dark?'rgba(255,255,255,0.04)':'rgba(43,42,38,0.04)',
+        }}>
+          ※ アプリが閉じている間は通知されない場合があります（ホーム画面に追加して起動しておくと届きやすくなります）。
+        </div>
+      )}
+      {perm === 'denied' && (
+        <div style={{
+          fontSize:11, color:'#B84A3B', lineHeight:'16px',
+          padding:'8px 10px', borderRadius:8,
+          background: dark?'rgba(184,74,59,0.12)':'rgba(184,74,59,0.08)',
+        }}>
+          通知が拒否されています。設定 → Safari / このアプリ → 通知 を確認してください。
+        </div>
+      )}
     </div>
   );
 }

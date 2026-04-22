@@ -174,6 +174,85 @@
       // When the user taps "編集" in the detail sheet, switch to the add modal in edit mode.
       const onStartEdit = (task) => { setEditingTask(task); setDetail(null); setAddOpen(true); };
 
+      // -- Notifications scheduler --
+      // Schedules an in-app setTimeout for every un-fired reminder.
+      // Works while the page is open (iOS PWA: while the app is foreground or was
+      // recently foregrounded). Full background push would require a server.
+      useEffect(() => {
+        if (typeof Notification === 'undefined') return;
+        if (Notification.permission !== 'granted') return;
+
+        const OFFSETS_MIN = {
+          'atdue': 0, '5min': 5, '15min': 15, '30min': 30,
+          '1h': 60, '2h': 120, '1d': 1440, '2d': 2880, '1w': 10080,
+        };
+        // Track what we've already fired so we don't double-fire across re-renders.
+        const firedKey = 'hibi-fired-reminders';
+        let fired;
+        try { fired = new Set(JSON.parse(localStorage.getItem(firedKey) || '[]')); }
+        catch(e) { fired = new Set(); }
+        const persistFired = () => {
+          // Cap the set so it doesn't grow forever
+          const arr = [...fired].slice(-500);
+          try { localStorage.setItem(firedKey, JSON.stringify(arr)); } catch(e) {}
+        };
+
+        const show = (task) => {
+          const when = task.allDay ? '終日' : fmtTime(task.due);
+          const body = `${when} · ${task.title}`;
+          try {
+            // Prefer SW registration when available so the notification survives
+            // brief blur; fall back to a plain Notification.
+            if (navigator.serviceWorker?.controller && navigator.serviceWorker.getRegistration) {
+              navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg?.showNotification) {
+                  reg.showNotification('Hibi 日々', {
+                    body, icon: './icon-192.png', badge: './icon-192.png',
+                    tag: task.id, renotify: true,
+                  });
+                } else {
+                  new Notification('Hibi 日々', { body });
+                }
+              });
+            } else {
+              new Notification('Hibi 日々', { body });
+            }
+          } catch(e) { console.warn('notify failed', e); }
+        };
+
+        const timers = [];
+        const now = Date.now();
+        tasks.forEach(t => {
+          if (t.done) return;
+          if (!t.remind || t.remind === 'none') return;
+          if (!t.due) return;
+          const offMin = OFFSETS_MIN[t.remind];
+          if (offMin === undefined) return;
+          const dueMs = (t.due instanceof Date ? t.due : new Date(t.due)).getTime();
+          const fireAt = dueMs - offMin * 60000;
+          const key = `${t.id}:${t.remind}:${dueMs}`;
+          if (fired.has(key)) return;
+          const delay = fireAt - now;
+          if (delay < -60000) {
+            // More than 1 min past its fire time — mark as fired, don't show stale.
+            fired.add(key); persistFired(); return;
+          }
+          if (delay < 0) {
+            // Just missed it — fire immediately.
+            show(t); fired.add(key); persistFired(); return;
+          }
+          // setTimeout max is ~24.8 days (2^31 ms). We re-run this effect
+          // whenever tasks change, so long-horizon reminders get re-scheduled
+          // when the user re-opens the app.
+          if (delay > 2 ** 31 - 1) return;
+          const id = setTimeout(() => {
+            show(t); fired.add(key); persistFired();
+          }, delay);
+          timers.push(id);
+        });
+        return () => { timers.forEach(clearTimeout); };
+      }, [tasks]);
+
       const dark = settings.dark;
       const filtered = useMemo(() => search ? tasks.filter(t=>t.title.includes(search)) : tasks, [search, tasks]);
 
