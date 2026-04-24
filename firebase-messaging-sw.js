@@ -28,8 +28,18 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(cs => {
-    if (cs.length) return cs[0].focus();
-    return self.clients.openWindow('./');
-  }));
+  const taskId = e.notification?.data?.taskId || '';
+  const targetUrl = taskId ? `./?task=${encodeURIComponent(taskId)}` : './';
+  e.waitUntil((async () => {
+    const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // If the app is already open, focus it and tell it which task to open.
+    for (const c of cs) {
+      if (c.url.includes(self.registration.scope) || c.url.includes('/')) {
+        try { c.postMessage({ type: 'hibi-open-task', taskId }); } catch(e) {}
+        try { await c.focus(); return; } catch(e) {}
+      }
+    }
+    // No open client — launch a new window with the task id in the URL.
+    await self.clients.openWindow(targetUrl);
+  })());
 });

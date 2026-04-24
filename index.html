@@ -255,6 +255,44 @@
       // When the user taps "編集" in the detail sheet, switch to the add modal in edit mode.
       const onStartEdit = (task) => { setEditingTask(task); setDetail(null); setAddOpen(true); };
 
+      // --- Deep-link: open a task from notification tap --------------------
+      // Either:
+      //   1. The SW posted a message while the app was already open
+      //   2. The SW opened a new window with ?task=<id> in the URL
+      // Retries briefly because tasks may still be loading from Firestore on cold start.
+      const openTaskById = React.useCallback((id) => {
+        if (!id) return;
+        let tries = 0;
+        const tryOpen = () => {
+          const found = tasks.find(t => t.id === id);
+          if (found) { setDetail(found); return; }
+          if (tries++ < 20) setTimeout(tryOpen, 150); // up to 3s
+        };
+        tryOpen();
+      }, [tasks]);
+
+      useEffect(() => {
+        // Parse ?task= from URL once on mount.
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const id = params.get('task');
+          if (id) {
+            openTaskById(id);
+            // Clean the URL so a reload doesn't keep re-opening it.
+            const clean = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, '', clean);
+          }
+        } catch(e) {}
+        // Listen for SW → page messages (notification tap while app open).
+        const onSWMsg = (e) => {
+          if (e.data?.type === 'hibi-open-task' && e.data.taskId) {
+            openTaskById(e.data.taskId);
+          }
+        };
+        navigator.serviceWorker?.addEventListener('message', onSWMsg);
+        return () => navigator.serviceWorker?.removeEventListener('message', onSWMsg);
+      }, [openTaskById]);
+
       // -- Notifications scheduler --
       // Schedules an in-app setTimeout for every un-fired reminder.
       // Works while the page is open (iOS PWA: while the app is foreground or was
