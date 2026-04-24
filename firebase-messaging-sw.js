@@ -9,7 +9,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 importScripts('./firebase-config.js');
 
-firebase.initializeApp(self.HIBI_FIREBASE_CONFIG);
+firebase.initializeApp(globalThis.HIBI_FIREBASE_CONFIG);
 const messaging = firebase.messaging();
 
 // Background messages → show a notification.
