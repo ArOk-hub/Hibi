@@ -161,7 +161,7 @@ function CategoryManager({ open, onClose, lists, setLists, tasks, setTasks, dark
 function CategoryList({ lists, tasks, onAdd, onEdit, onDelete, dark, cardBg, stroke, text, sub }) {
   return (
     <div style={{ padding:'0 16px' }}>
-      <div style={{ fontSize:11, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600, padding:'4px 8px 10px' }}>
+      <div style={{ fontSize:11, color:sub, letterSpacing:1, fontWeight:600, padding:'4px 8px 10px' }}>
         あなたのカテゴリ
       </div>
       <div style={{ borderRadius:14, overflow:'hidden', background:cardBg, border:`0.5px solid ${stroke}` }}>
@@ -215,23 +215,43 @@ function CategoryList({ lists, tasks, onAdd, onEdit, onDelete, dark, cardBg, str
 // ─────────────────────────────────────────────────────────
 // CATEGORY ICON — renders either image or emoji in a rounded square
 function CategoryIcon({ l, size=40 }) {
-  const radius = Math.round(size * 0.28);
+  const radius = Math.round(size * 0.5); // perfect circle
   if (l.image) {
     return (
       <div style={{
         width:size, height:size, borderRadius:radius, overflow:'hidden', flexShrink:0,
-        background: l.color+'22',
+        background: l.color+'22', position:'relative',
       }}>
         <img src={l.image} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
       </div>
     );
   }
+  // Minimal: first char of name (usually kanji/katakana) in category color, inside
+  // a washi-toned tint. A tiny color pin sits bottom-right to carry the accent.
+  const glyph = (l.name || l.emoji || '?').trim().slice(0, 1);
+  const isEmoji = /[\p{Emoji}]/u.test(glyph) && !/[A-Za-z0-9\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff\uff01-\uff60]/.test(glyph);
   return (
     <div style={{
-      width:size, height:size, borderRadius:radius, background: l.color+'22', color:l.color,
-      display:'flex', alignItems:'center', justifyContent:'center', fontSize: Math.round(size*0.5),
-      flexShrink:0,
-    }}>{l.emoji}</div>
+      position:'relative', width:size, height:size, flexShrink:0,
+    }}>
+      <div style={{
+        width:size, height:size, borderRadius:radius,
+        background: l.color+'1C',
+        color: l.color,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize: isEmoji ? Math.round(size*0.55) : Math.round(size*0.48),
+        fontWeight: 600,
+        fontFamily: 'var(--hibi-font-display)',
+        letterSpacing: 0,
+      }}>{glyph}</div>
+      {/* ink pin (color dot) — bottom-right */}
+      <span aria-hidden style={{
+        position:'absolute', right: 0, bottom: 0,
+        width: Math.max(6, size*0.18), height: Math.max(6, size*0.18),
+        borderRadius: '50%', background: l.color,
+        boxShadow: '0 0 0 1.5px var(--hibi-surface, #FFFDF7)',
+      }}/>
+    </div>
   );
 }
 
@@ -250,7 +270,7 @@ function CategoryEditor({ value, onChange, dark, cardBg, stroke, text, sub }) {
       </div>
 
       {/* Name */}
-      <div style={{ fontSize:11, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600, padding:'0 8px 8px' }}>名前</div>
+      <div style={{ fontSize:11, color:sub, letterSpacing:1, fontWeight:600, padding:'0 8px 8px' }}>名前</div>
       <input
         type="text"
         value={value.name}
@@ -264,7 +284,7 @@ function CategoryEditor({ value, onChange, dark, cardBg, stroke, text, sub }) {
       />
 
       {/* Icon mode switch */}
-      <div style={{ fontSize:11, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600, padding:'18px 8px 8px' }}>アイコン</div>
+      <div style={{ fontSize:11, color:sub, letterSpacing:1, fontWeight:600, padding:'18px 8px 8px' }}>アイコン</div>
       <div style={{ display:'flex', padding:3, gap:3, background: dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)', borderRadius:10, marginBottom:10 }}>
         {[['emoji','絵文字'],['image','画像']].map(([k,l])=>(
           <button key={k} onClick={()=>setIconMode(k)} style={{
@@ -284,11 +304,11 @@ function CategoryEditor({ value, onChange, dark, cardBg, stroke, text, sub }) {
       )}
 
       {/* Color palette */}
-      <div style={{ fontSize:11, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600, padding:'18px 8px 8px' }}>色</div>
+      <div style={{ fontSize:11, color:sub, letterSpacing:1, fontWeight:600, padding:'18px 8px 8px' }}>色</div>
       <div style={{ display:'flex', flexWrap:'wrap', gap:10, padding:'0 4px' }}>
         {LIST_COLOR_PALETTE.map(c => (
           <button key={c} onClick={()=>update({ color: c })} style={{
-            width:36, height:36, borderRadius:18, border:'none', cursor:'pointer',
+            width:36, height:36, borderRadius:16, border:'none', cursor:'pointer',
             background:c,
             boxShadow: value.color===c ? `0 0 0 3px ${dark?'#15130F':'#FAF7F0'}, 0 0 0 5px ${c}` : 'none',
             transition:'box-shadow 160ms',

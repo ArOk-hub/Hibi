@@ -61,7 +61,7 @@ function TaskDetail({ task, onClose, onToggle, onEdit, onDelete, dark }) {
 
           {subs.length > 0 && (
             <div style={{ background:cardBg, borderRadius:16, padding:'14px 16px', border:`0.5px solid ${stroke}`, marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:sub, fontWeight:600, textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:sub, fontWeight:600, letterSpacing:1, marginBottom:10 }}>
                 <span>サブタスク</span><span>{subDone}/{subs.length}</span>
               </div>
               <div style={{ height:4, borderRadius:2, background: dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)', overflow:'hidden', marginBottom:12 }}>
@@ -84,7 +84,7 @@ function TaskDetail({ task, onClose, onToggle, onEdit, onDelete, dark }) {
 
           {task.note && (
             <div style={{ background:cardBg, borderRadius:16, padding:'14px 16px', border:`0.5px solid ${stroke}`, marginBottom:10 }}>
-              <div style={{ fontSize:12, color:sub, fontWeight:600, textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>メモ</div>
+              <div style={{ fontSize:12, color:sub, fontWeight:600, letterSpacing:1, marginBottom:6 }}>メモ</div>
               <div style={{ fontSize:14, color:textC, lineHeight:'20px' }}>{task.note}</div>
             </div>
           )}

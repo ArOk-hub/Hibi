@@ -34,7 +34,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
           </button>
           <CategoryIcon l={l} size={36}/>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>カテゴリ</div>
+            <div style={{ fontSize:12, color:sub, letterSpacing:1, fontWeight:600 }}>カテゴリ</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:2 }}>
               <div style={{ fontSize:28, fontWeight:700, color:text, letterSpacing:-0.8, fontFamily:'var(--hibi-font-display)' }}>
                 {l.name}
@@ -46,7 +46,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
         </div>
 
         {open.length > 0 && (
-          <div style={{ margin:'0 16px', borderRadius:18, overflow:'hidden', background: cardBg, border:`0.5px solid ${stroke}` }}>
+          <div style={{ margin:'0 16px', borderRadius:16, overflow:'hidden', background: cardBg, border:`0.5px solid ${stroke}` }}>
             {open.map(t => (
               <TaskCell key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={onOpen} dark={dark} density={density}/>
             ))}
@@ -55,10 +55,10 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
 
         {done.length > 0 && (
           <>
-            <div style={{ padding:'18px 24px 8px', fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
+            <div style={{ padding:'18px 24px 8px', fontSize:12, color:sub, letterSpacing:1, fontWeight:600 }}>
               完了済み · {done.length}
             </div>
-            <div style={{ margin:'0 16px', borderRadius:18, overflow:'hidden', background: cardBg, border:`0.5px solid ${stroke}` }}>
+            <div style={{ margin:'0 16px', borderRadius:16, overflow:'hidden', background: cardBg, border:`0.5px solid ${stroke}` }}>
               {done.map(t => (
                 <TaskCell key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={onOpen} dark={dark} density={density}/>
               ))}
@@ -67,7 +67,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
         )}
 
         {listTasks.length === 0 && (
-          <div style={{ margin:'0 16px', padding:'40px 20px', background:cardBg, borderRadius:18, textAlign:'center', color:sub, fontSize:13 }}>
+          <div style={{ margin:'0 16px', padding:'40px 20px', background:cardBg, borderRadius:16, textAlign:'center', color:sub, fontSize:13 }}>
             このカテゴリのタスクはありません
           </div>
         )}
@@ -78,7 +78,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
   return (
     <div style={{ padding: '0 0 120px' }}>
       <div style={{ padding:'8px 22px 18px' }}>
-        <div style={{ fontSize:12, color: sub, letterSpacing: 2, textTransform:'uppercase', fontWeight:600 }}>
+        <div style={{ fontSize:12, color: sub, letterSpacing:1, fontWeight:600 }}>
           マイリスト
         </div>
         <div style={{ fontSize:44, fontWeight:700, color:text, letterSpacing:-1, marginTop:4, fontFamily:'var(--hibi-font-display)' }}>
@@ -112,7 +112,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
       {/* My Lists */}
       <div style={{ marginTop:20 }}>
         <div style={{ padding:'0 24px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
+          <div style={{ fontSize:12, color:sub, letterSpacing:1, fontWeight:600 }}>
             カテゴリ
           </div>
           <button onClick={onOpenCategoryManager} style={{
@@ -120,7 +120,7 @@ function ListsScreen({ tasks, onOpen, onToggle, onDelete, onFlag, dark, density,
             fontSize:13, fontWeight:700, cursor:'pointer', padding:'2px 6px',
           }}>編集</button>
         </div>
-        <div style={{ margin:'0 16px', borderRadius:18, overflow:'hidden', background:cardBg,
+        <div style={{ margin:'0 16px', borderRadius:16, overflow:'hidden', background:cardBg,
           border:`0.5px solid ${dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)'}` }}>
           {LISTS.map((l,i) => {
             const count = tasks.filter(t => t.list===l.id && !t.done).length;
@@ -151,7 +151,7 @@ function StatsScreen({ tasks, dark }) {
   const text = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
-  const accent = '#3A5A8A';
+  const accent = (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--hibi-accent').trim()) || '#3A5A8A';
   const stroke = dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)';
 
   const weekPct = Math.round(STATS.weekDone/STATS.weekTotal*100);
@@ -160,7 +160,7 @@ function StatsScreen({ tasks, dark }) {
   return (
     <div style={{ padding:'0 0 120px' }}>
       <div style={{ padding:'8px 22px 18px' }}>
-        <div style={{ fontSize:12, color:sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
+        <div style={{ fontSize:12, color:sub, letterSpacing:1, fontWeight:600 }}>
           あなたの4月
         </div>
         <div style={{ fontSize:44, fontWeight:700, color:text, letterSpacing:-1, marginTop:4, fontFamily:'var(--hibi-font-display)' }}>
@@ -169,9 +169,9 @@ function StatsScreen({ tasks, dark }) {
       </div>
 
       {/* Streak hero */}
-      <div style={{ margin:'0 16px', padding:'20px', borderRadius:22, background: `linear-gradient(135deg, ${accent}, #7A9BC4)`, color:'#fff', position:'relative', overflow:'hidden' }}>
+      <div style={{ margin:'0 16px', padding:'20px', borderRadius:20, background: accent, color:'#fff', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', right:-10, top:-10, fontSize:120, opacity:0.15 }}>🔥</div>
-        <div style={{ fontSize:12, fontWeight:600, letterSpacing:2, textTransform:'uppercase', opacity:0.85 }}>連続達成</div>
+        <div style={{ fontSize:12, fontWeight:600, letterSpacing:1, opacity:0.85 }}>連続達成</div>
         <div style={{ display:'flex', alignItems:'baseline', gap:6, marginTop:6 }}>
           <div style={{ fontSize:56, fontWeight:800, letterSpacing:-2, fontFamily:'var(--hibi-font-display)' }}>{STATS.streak}</div>
           <div style={{ fontSize:18, fontWeight:600 }}>日</div>
@@ -186,8 +186,8 @@ function StatsScreen({ tasks, dark }) {
       </div>
 
       {/* Weekly bars */}
-      <div style={{ margin:'14px 16px 0', padding:'18px', borderRadius:22, background:cardBg, border:`0.5px solid ${stroke}` }}>
-        <div style={{ fontSize:13, fontWeight:600, color:sub, letterSpacing:1, textTransform:'uppercase' }}>先週の完了</div>
+      <div style={{ margin:'14px 16px 0', padding:'18px', borderRadius:20, background:cardBg, border:`0.5px solid ${stroke}` }}>
+        <div style={{ fontSize:13, fontWeight:600, color:sub, letterSpacing:1 }}>先週の完了</div>
         <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:80, marginTop:14 }}>
           {STATS.week.map((v,i) => {
             const max = Math.max(...STATS.week, 1);
@@ -204,8 +204,8 @@ function StatsScreen({ tasks, dark }) {
       </div>
 
       {/* By category */}
-      <div style={{ margin:'14px 16px 0', padding:'18px', borderRadius:22, background:cardBg, border:`0.5px solid ${stroke}` }}>
-        <div style={{ fontSize:13, fontWeight:600, color:sub, letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>カテゴリ別</div>
+      <div style={{ margin:'14px 16px 0', padding:'18px', borderRadius:20, background:cardBg, border:`0.5px solid ${stroke}` }}>
+        <div style={{ fontSize:13, fontWeight:600, color:sub, letterSpacing:1, marginBottom:12 }}>カテゴリ別</div>
         {STATS.byList.map(row => {
           const l = LISTS.find(x=>x.id===row.list);
           const max = Math.max(...STATS.byList.map(r=>r.done));
@@ -224,14 +224,14 @@ function StatsScreen({ tasks, dark }) {
       </div>
 
       {/* Heatmap */}
-      <div style={{ margin:'14px 16px 0', padding:'18px', borderRadius:22, background:cardBg, border:`0.5px solid ${stroke}` }}>
-        <div style={{ fontSize:13, fontWeight:600, color:sub, letterSpacing:1, textTransform:'uppercase' }}>時間帯別の生産性</div>
+      <div style={{ margin:'14px 16px 0', padding:'18px', borderRadius:20, background:cardBg, border:`0.5px solid ${stroke}` }}>
+        <div style={{ fontSize:13, fontWeight:600, color:sub, letterSpacing:1 }}>時間帯別の生産性</div>
         <div style={{ fontSize:11, color:sub, marginTop:2 }}>集中しやすい時間が見えます</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(24,1fr)', gap:2, marginTop:14 }}>
           {STATS.heatmap.map((v,i) => (
             <div key={i} style={{
               aspectRatio:'1', borderRadius:3,
-              background: v===0 ? (dark?'rgba(255,255,255,0.05)':'rgba(43,42,38,0.05)') : `rgba(122,141,63,${0.2 + v*0.16})`,
+              background: v===0 ? (dark?'rgba(255,255,255,0.05)':'rgba(43,42,38,0.05)') : `rgba(58,90,138,${0.2 + v*0.16})`,
             }}/>
           ))}
         </div>
@@ -251,7 +251,7 @@ function RingCard({ label, pct, num, total, color, dark }) {
   const circ = 2*Math.PI*30;
   const offset = circ * (1 - pct/100);
   return (
-    <div style={{ padding:'16px', borderRadius:22, background:cardBg, border:`0.5px solid ${stroke}`, display:'flex', alignItems:'center', gap:12 }}>
+    <div style={{ padding:'16px', borderRadius:20, background:cardBg, border:`0.5px solid ${stroke}`, display:'flex', alignItems:'center', gap:12 }}>
       <div style={{ position:'relative', width:72, height:72 }}>
         <svg width="72" height="72" viewBox="0 0 72 72">
           <circle cx="36" cy="36" r="30" fill="none" stroke={dark?'rgba(255,255,255,0.08)':'rgba(43,42,38,0.08)'} strokeWidth="6"/>
@@ -262,7 +262,7 @@ function RingCard({ label, pct, num, total, color, dark }) {
         <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, fontWeight:700, color:text, fontVariantNumeric:'tabular-nums' }}>{pct}%</div>
       </div>
       <div>
-        <div style={{ fontSize:12, color:sub, fontWeight:600, letterSpacing:1, textTransform:'uppercase' }}>{label}</div>
+        <div style={{ fontSize:12, color:sub, fontWeight:600, letterSpacing:1 }}>{label}</div>
         <div style={{ fontSize:17, fontWeight:700, color:text, marginTop:2 }}>{num}/{total}</div>
         <div style={{ fontSize:11, color:sub }}>タスク完了</div>
       </div>

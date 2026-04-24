@@ -32,7 +32,7 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
   const dim = dark ? 'rgba(245,241,230,0.25)' : 'rgba(43,42,38,0.25)';
-  const accent = '#3A5A8A';
+  const accent = (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--hibi-accent').trim()) || '#3A5A8A';
 
   // Build calendar grid (6 weeks)
   const firstDow = month.getDay();
@@ -84,7 +84,7 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
     <div style={{ padding: '0 0 120px' }}>
       {/* Header */}
       <div style={{ padding:'8px 22px 4px' }}>
-        <div style={{ fontSize:12, color: sub, letterSpacing:2, textTransform:'uppercase', fontWeight:600 }}>
+        <div style={{ fontSize:12, color: sub, letterSpacing:1, fontWeight:500, fontFamily:'var(--hibi-font-display)' }}>
           {view === 'day'
             ? `${MONTH_JP[selected.getMonth()]} · ${selected.getFullYear()}`
             : `${MONTH_JP[month.getMonth()]} · ${month.getFullYear()}`}
@@ -145,14 +145,20 @@ function CalendarScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, densi
                 <div key={i} onClick={()=>setSelected(new Date(d))} style={{
                   aspectRatio:'0.9', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start',
                   paddingTop: 6, cursor:'pointer', borderRadius: 10, position:'relative',
-                  background: isSel ? (dark?'rgba(122,141,63,0.22)':'rgba(122,141,63,0.14)') : 'transparent',
+                  background: isSel ? (dark?'rgba(58,90,138,0.22)':'rgba(58,90,138,0.10)') : 'transparent',
                 }}>
                   <div style={{
-                    width:26, height:26, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center',
-                    background: isToday ? accent : 'transparent',
-                    color: isToday ? '#fff' : color,
-                    fontSize: 14, fontWeight: isToday?700:500, fontVariantNumeric:'tabular-nums',
-                  }}>{d.getDate()}</div>
+                    width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center',
+                    color: color,
+                    fontSize: 15, fontWeight: isToday?700:500, fontVariantNumeric:'tabular-nums',
+                    position:'relative',
+                  }}>
+                    {d.getDate()}
+                    {isToday && <span aria-hidden style={{
+                      position:'absolute', bottom:-1, left:'50%', transform:'translateX(-50%)',
+                      width:18, height:2, borderRadius:1, background:'#B84A3B',
+                    }}/>}
+                  </div>
                   {/* dots */}
                   <div style={{ display:'flex', gap:2, marginTop:3, minHeight:5 }}>
                     {dayTasks.slice(0,3).map((t,j) => {
@@ -366,10 +372,16 @@ function WeekView({ date, tasks, onOpen, dark }) {
             <div key={i} style={{ padding:'8px 0', textAlign:'center', borderLeft:`0.5px solid ${grid}` }}>
               <div style={{ fontSize:10, color:sub, fontWeight:600 }}>{WEEK_JP[d.getDay()]}</div>
               <div style={{
-                fontSize:15, fontWeight:700, color: isToday?'#fff':text, marginTop:2,
-                width:24, height:24, borderRadius:12, margin:'2px auto 0', display:'flex', alignItems:'center', justifyContent:'center',
-                background: isToday ? '#3A5A8A' : 'transparent',
-              }}>{d.getDate()}</div>
+                fontSize:15, fontWeight:700, color:text, marginTop:2,
+                width:28, height:24, margin:'2px auto 0', display:'flex', alignItems:'center', justifyContent:'center',
+                position:'relative',
+              }}>
+                {d.getDate()}
+                {isToday && <span aria-hidden style={{
+                  position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)',
+                  width:18, height:2, borderRadius:1, background:'#B84A3B',
+                }}/>}
+              </div>
             </div>
           );
         })}

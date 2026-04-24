@@ -48,7 +48,7 @@ function NotificationsBanner({ dark }) {
   const bg = dark ? 'rgba(107, 127, 168, 0.18)' : 'rgba(58, 90, 138, 0.08)';
   const border = dark ? 'rgba(107, 127, 168, 0.35)' : 'rgba(58, 90, 138, 0.2)';
   const text = dark ? '#F5F1E6' : '#2B2A26';
-  const accent = '#3A5A8A';
+  const accent = (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--hibi-accent').trim()) || '#3A5A8A';
 
   return (
     <div style={{

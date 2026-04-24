@@ -112,7 +112,7 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
   const bg = dark ? '#1C1A17' : '#FAF7F0';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
   const stroke = dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)';
-  const accent = '#3A5A8A';
+  const accent = (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--hibi-accent').trim()) || '#3A5A8A';
 
   // NLP parser — simple demo
   useEffect(() => {
@@ -220,7 +220,7 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
           <div style={{ background: cardBg, borderRadius:18, padding:'14px 16px', border:`0.5px solid ${stroke}` }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
               <Icon name="sparkle" size={14} color={accent}/>
-              <span style={{ fontSize:11, color:accent, fontWeight:700, letterSpacing:1, textTransform:'uppercase' }}>自然言語入力</span>
+              <span style={{ fontSize:11, color:accent, fontWeight:700, letterSpacing:1 }}>自然言語入力</span>
             </div>
             <textarea
               autoFocus
@@ -360,13 +360,26 @@ function OptionRow({ dark, icon, iconBg, label, value, onClick, chevOpen }) {
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
   const cardBg = dark ? '#24221E' : '#FFFDF7';
   const stroke = dark?'rgba(255,255,255,0.06)':'rgba(43,42,38,0.06)';
+  // Ink/paper icon chip — iconBg acts only as a subtle accent dot
+  const iconTint = dark ? 'rgba(245,241,230,0.08)' : 'rgba(43,42,38,0.06)';
+  const iconColor = dark ? 'rgba(245,241,230,0.85)' : '#2B2A26';
   return (
     <button onClick={onClick} style={{
       background:cardBg, borderRadius:14, padding:'10px 14px', border:`0.5px solid ${stroke}`,
       display:'flex', alignItems:'center', gap:10, cursor:'pointer', width:'100%',
     }}>
-      <div style={{ width:28, height:28, borderRadius:8, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <Icon name={icon} size={14} color="#fff"/>
+      <div style={{
+        position:'relative', width:28, height:28, borderRadius:8, background: iconTint,
+        display:'flex', alignItems:'center', justifyContent:'center',
+      }}>
+        <Icon name={icon} size={14} color={iconColor}/>
+        {/* accent pin bottom-right — carries the semantic color without shouting */}
+        {iconBg && (
+          <span aria-hidden style={{
+            position:'absolute', right:-1, bottom:-1, width:6, height:6, borderRadius:3,
+            background: iconBg, boxShadow: `0 0 0 1.5px ${cardBg}`,
+          }}/>
+        )}
       </div>
       <div style={{ flex:1, textAlign:'left', fontSize:14, fontWeight:500, color:textC }}>{label}</div>
       <div style={{ fontSize:13, color:sub, maxWidth:170, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{value}</div>

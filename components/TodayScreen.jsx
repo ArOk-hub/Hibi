@@ -28,7 +28,7 @@ function TodayScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, focus, d
       <div style={{
         padding: '8px 22px 18px',
       }}>
-        <div style={{ fontSize:12, color: sub, letterSpacing: 2, textTransform:'uppercase', fontWeight:600 }}>
+        <div style={{ fontSize:12, color: sub, letterSpacing: 1, fontWeight:500, fontFamily:'var(--hibi-font-display)' }}>
           {fmtDateFull(TODAY)}
         </div>
         <div style={{ display:'flex', alignItems:'baseline', gap: 10, marginTop: 6 }}>
@@ -40,8 +40,8 @@ function TodayScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, focus, d
           </div>
         </div>
         {/* progress bar */}
-        <div style={{ marginTop: 14, height: 6, borderRadius: 3, background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(43,42,38,0.08)', overflow:'hidden' }}>
-          <div style={{ width: `${pct}%`, height:'100%', background:'linear-gradient(90deg,#3A5A8A,#7A9BC4)', transition:'width 400ms' }}/>
+        <div style={{ marginTop: 14, height: 4, borderRadius: 2, background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(43,42,38,0.08)', overflow:'hidden' }}>
+          <div style={{ width: `${pct}%`, height:'100%', background:'#3A5A8A', transition:'width 400ms cubic-bezier(.2,.8,.2,1)' }}/>
         </div>
       </div>
 
@@ -50,8 +50,8 @@ function TodayScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, focus, d
         <div key={label} style={{ marginTop: 10 }}>
           <div style={{
             padding: '10px 24px 8px',
-            fontSize: 12, letterSpacing: 2, fontWeight: 600,
-            color: sub, textTransform:'uppercase',
+            fontSize: 12, letterSpacing: 1, fontWeight: 500,
+            color: sub,
             fontFamily:'var(--hibi-font-display)',
           }}>{label}</div>
           <div style={{
@@ -67,10 +67,18 @@ function TodayScreen({ tasks, onToggle, onDelete, onFlag, onOpen, dark, focus, d
       ))}
 
       {display.length === 0 && (
-        <div style={{ textAlign:'center', padding:'80px 20px', color: sub }}>
-          <div style={{ fontSize: 48, marginBottom: 10 }}>🍵</div>
-          <div style={{ fontSize: 15, fontWeight:500, color: text }}>今日はすべて完了しました</div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>よい一日でしたね</div>
+        <div style={{ textAlign:'center', padding:'72px 20px 40px', color: sub }}>
+          <svg width="96" height="96" viewBox="0 0 96 96" style={{ marginBottom: 14, opacity: 0.9 }}>
+            {/* Rising-sun inspired: circle + two rays, washi-soft */}
+            <circle cx="48" cy="52" r="22" fill="none" stroke={dark?'rgba(245,241,230,0.28)':'rgba(184,74,59,0.45)'} strokeWidth="1.5"/>
+            <circle cx="48" cy="52" r="9" fill={dark?'rgba(245,241,230,0.18)':'rgba(184,74,59,0.28)'}/>
+            <path d="M14 78 L82 78" stroke={dark?'rgba(245,241,230,0.18)':'rgba(43,42,38,0.18)'} strokeWidth="1" strokeLinecap="round"/>
+            <path d="M22 84 L74 84" stroke={dark?'rgba(245,241,230,0.10)':'rgba(43,42,38,0.10)'} strokeWidth="1" strokeLinecap="round"/>
+            {/* tiny check floating */}
+            <path d="M40 52 L46 58 L58 46" fill="none" stroke={dark?'rgba(245,241,230,0.55)':'#3A5A8A'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <div style={{ fontSize: 17, fontWeight:600, color: text, fontFamily:'var(--hibi-font-display)', letterSpacing: 1 }}>今日はもう空っぽです</div>
+          <div style={{ fontSize: 13, marginTop: 6, letterSpacing: 0.5 }}>お疲れさまでした。</div>
         </div>
       )}
     </div>

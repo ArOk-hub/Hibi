@@ -71,7 +71,7 @@ function TaskCell({ task, onToggle, onDelete, onFlag, onOpen, dark, density='com
   const checkFill = Math.max(0, Math.min(1, dx/120));
 
   return (
-    <div style={{ position: 'relative', height: rowH, overflow: 'hidden', borderRadius: 14 }}>
+    <div style={{ position: 'relative', height: rowH, overflow: 'hidden', borderRadius: 16 }}>
       {/* complete bg (left, revealed on right swipe) */}
       <div style={{
         position: 'absolute', inset: 0,
@@ -124,6 +124,14 @@ function TaskCell({ task, onToggle, onDelete, onFlag, onOpen, dark, density='com
           touchAction: 'pan-y',
           cursor: 'grab',
         }}>
+        {/* priority stripe — left edge */}
+        {task.pri !== 'none' && !task.done && (
+          <span aria-hidden style={{
+            position:'absolute', left:0, top: 8, bottom: 8,
+            width: 3, borderRadius: '0 2px 2px 0',
+            background: pri.dot,
+          }}/>
+        )}
         {/* checkbox */}
         <div
           onClick={(e)=>{ e.stopPropagation(); onToggle(task.id); }}
@@ -148,32 +156,31 @@ function TaskCell({ task, onToggle, onDelete, onFlag, onOpen, dark, density='com
           {density !== 'compact' && (
             <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, fontSize:12, color: task.overdue && !task.done ? ACT_DELETE.color : sub }}>
               {task.due && <span>{task.allDay ? '終日' : fmtTime(task.due)}</span>}
-              {list && <><span style={{ opacity:0.5 }}>·</span>
-                {list.image
-                  ? <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
-                      <span style={{ width:14, height:14, borderRadius:4, overflow:'hidden', display:'inline-block' }}>
-                        <img src={list.image} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
-                      </span>
-                      {list.name}
-                    </span>
-                  : <span>{list.emoji} {list.name}</span>}
-              </>}
-              {task.repeat && task.repeat !== 'none' && <>
-                <span style={{ opacity:0.5 }}>·</span>
-                <span style={{ display:'inline-flex', alignItems:'center', gap:3, color:'#6B7FA8', fontWeight:600 }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0114-5l2 2M20 12a8 8 0 01-14 5l-2-2M18 3v4h-4M6 21v-4h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  {repeatBadgeLabel(task.repeat, task.repeatDays)}
+              {list && <><span style={{ opacity:0.45 }}>·</span>
+                <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
+                  <span style={{ width:5, height:5, borderRadius:3, background: list.color, display:'inline-block' }}/>
+                  {list.name}
                 </span>
               </>}
-              {task.sub && task.sub.length > 0 && <><span style={{ opacity:0.5 }}>·</span><span>{task.sub.filter(s=>s.d).length}/{task.sub.length}</span></>}
-              {task.flag && <span style={{ color: ACT_FLAG.color }}>⚑</span>}
-              {task.overdue && !task.done && <span style={{ color: ACT_DELETE.color, fontWeight:600 }}>期限切れ</span>}
+              {task.repeat && task.repeat !== 'none' && (
+                <><span style={{ opacity:0.45 }}>·</span>
+                  <Icon name="repeat" size={11} color="currentColor"/>
+                </>
+              )}
+              {task.sub && task.sub.length > 0 && <><span style={{ opacity:0.45 }}>·</span><span>{task.sub.filter(s=>s.d).length}/{task.sub.length}</span></>}
+              {task.flag && <span style={{ color: ACT_FLAG.color, marginLeft:'auto' }}>⚑</span>}
             </div>
           )}
         </div>
 
-        {/* priority dot */}
-        <div style={{ width: 8, height: 8, borderRadius: 4, background: pri.dot, flexShrink: 0, opacity: task.done ? 0.25 : 1 }}/>
+        {/* overdue hint (priority is now the left stripe) */}
+        {task.overdue && !task.done ? (
+          <span style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: 1, color: ACT_DELETE.color,
+            padding: '2px 6px', borderRadius: 4, border: `0.5px solid ${ACT_DELETE.color}55`,
+            flexShrink: 0, fontFamily: 'var(--hibi-font-display)',
+          }}>期限切</span>
+        ) : null}
       </div>
     </div>
   );
