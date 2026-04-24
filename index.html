@@ -22,6 +22,13 @@
     });
   }
 </script>
+<!-- Firebase SDK (compat build — exposes the global `firebase`) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+<script src="./firebase-config.js"></script>
+<script src="./firebase-client.js"></script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -81,6 +88,7 @@
   <script type="text/babel" src="components/AddTaskModal.jsx"></script>
   <script type="text/babel" src="components/TaskDetail.jsx"></script>
   <script type="text/babel" src="components/CategoryManager.jsx"></script>
+  <script type="text/babel" src="components/NotificationsBanner.jsx"></script>
   <script type="text/babel" src="components/Chrome.jsx"></script>
 
   <script type="text/babel" data-presets="react">
@@ -121,6 +129,79 @@
       useEffect(() => {
         try { localStorage.setItem('hibi-tasks', JSON.stringify(tasks)); } catch(e) {}
       }, [tasks]);
+
+      // --- Firestore sync (bi-directional) -------------------------------
+      // We guard against sync loops with a ref of "just applied from remote"
+      // task ids + a hash of the last-synced snapshot per task.
+      const remoteAppliedRef = React.useRef(new Set());
+      const lastSyncedHashRef = React.useRef(new Map());
+      const hashTask = (t) => JSON.stringify({
+        title: t.title, done: !!t.done, flag: !!t.flag,
+        due: t.due instanceof Date ? t.due.getTime() : t.due,
+        end: t.end instanceof Date ? t.end.getTime() : t.end,
+        list: t.list, remind: t.remind, allDay: !!t.allDay, notes: t.notes || '',
+      });
+
+      // Push local changes up to Firestore (diff-based so we don't re-write everything).
+      useEffect(() => {
+        if (!window.HibiFirebase) return;
+        let cancelled = false;
+        (async () => {
+          await window.HibiFirebase.ready;
+          if (cancelled) return;
+          for (const t of tasks) {
+            if (!t.id) continue;
+            if (remoteAppliedRef.current.has(t.id)) {
+              remoteAppliedRef.current.delete(t.id);
+              lastSyncedHashRef.current.set(t.id, hashTask(t));
+              continue;
+            }
+            const h = hashTask(t);
+            if (lastSyncedHashRef.current.get(t.id) === h) continue;
+            lastSyncedHashRef.current.set(t.id, h);
+            window.HibiFirebase.syncTask(t);
+          }
+          // Detect deletions: ids we synced before that are gone now.
+          const currentIds = new Set(tasks.map(t => t.id));
+          for (const id of [...lastSyncedHashRef.current.keys()]) {
+            if (!currentIds.has(id)) {
+              lastSyncedHashRef.current.delete(id);
+              window.HibiFirebase.removeTask(id);
+            }
+          }
+        })();
+        return () => { cancelled = true; };
+      }, [tasks]);
+
+      // Pull remote changes down and merge (remote wins on conflict — simple MVP).
+      useEffect(() => {
+        if (!window.HibiFirebase) return;
+        const unsub = window.HibiFirebase.onTasks((remote) => {
+          if (!Array.isArray(remote)) return;
+          setTasks(prev => {
+            const byId = new Map(prev.map(t => [t.id, t]));
+            remote.forEach(rt => {
+              byId.set(rt.id, rt);
+              remoteAppliedRef.current.add(rt.id);
+              lastSyncedHashRef.current.set(rt.id, hashTask(rt));
+            });
+            // Drop any local task whose id was synced before but is absent from remote
+            // (= deleted on another device). We use lastSyncedHashRef as the "we know
+            // about this id on the server" ledger.
+            const remoteIds = new Set(remote.map(t => t.id));
+            for (const [id] of [...byId]) {
+              const wasServerKnown = lastSyncedHashRef.current.has(id) && !remote.find(r=>r.id===id);
+              if (wasServerKnown && !remoteIds.has(id)) {
+                // Only drop if we previously synced this up — otherwise it's a brand-new
+                // local task not yet pushed.
+                byId.delete(id);
+              }
+            }
+            return [...byId.values()];
+          });
+        });
+        return unsub;
+      }, []);
       const [lists, setListsState] = useState(() => {
         try {
           const raw = localStorage.getItem('hibi-lists');
@@ -269,6 +350,7 @@
             {tab === 'today' && (
               <>
                 <TopBar dark={dark} searchValue={search} setSearchValue={setSearch}/>
+                <NotificationsBanner dark={dark}/>
                 <div style={{ padding:'8px 0 0' }}>
                   <TodayScreen tasks={filtered} onToggle={onToggle} onDelete={onDelete} onFlag={onFlag} onOpen={setDetail} dark={dark} density={settings.density}/>
                 </div>
