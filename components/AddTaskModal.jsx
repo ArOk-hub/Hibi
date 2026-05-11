@@ -63,6 +63,8 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
   const [repeatDays, setRepeatDays] = useState([]); // for 'custom': array of 0–6 (Sun..Sat)
   const [remindOpen, setRemindOpen] = useState(false);
   const [repeatOpen, setRepeatOpen] = useState(false);
+  const [subs, setSubs] = useState([]);
+  const [subDraft, setSubDraft] = useState('');
 
   // When opening in edit mode, hydrate state from the task.
   // When opening fresh (add), reset to sensible defaults.
@@ -85,6 +87,8 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
       setRemind(editTask.remind || '15min');
       setRepeat(editTask.repeat || 'none');
       setRepeatDays(editTask.repeatDays ? [...editTask.repeatDays] : []);
+      setSubs(editTask.sub ? editTask.sub.map(s=>({...s})) : []);
+      setSubDraft('');
       setShowDate(false);
       setRemindOpen(false);
       setRepeatOpen(false);
@@ -100,6 +104,8 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
       setRemind('15min');
       setRepeat('none');
       setRepeatDays([]);
+      setSubs([]);
+      setSubDraft('');
       setShowDate(false);
       setRemindOpen(false);
       setRepeatOpen(false);
@@ -176,6 +182,7 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
       remind,
       repeat,
       repeatDays: repeat === 'custom' ? [...repeatDays] : [],
+      sub: subs.filter(s=>s.t.trim()).map(s=>({ t:s.t.trim(), d:!!s.d })),
     };
     if (isEdit) {
       // preserve id + done + any other fields (sub, note, evt, flag...)
@@ -285,6 +292,42 @@ function AddTaskModal({ open, onClose, onAdd, onUpdate, editTask, dark }) {
               dark={dark}
             />
           )}
+
+          {/* Subtasks */}
+          <div style={{ background:cardBg, borderRadius:14, padding:'12px 14px', border:`0.5px solid ${stroke}` }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:'rgba(58,90,138,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <Icon name="check" size={14} color="#3A5A8A"/>
+              </div>
+              <div style={{ flex:1, fontSize:14, fontWeight:500, color:textC }}>サブタスク</div>
+              {subs.length>0 && <div style={{ fontSize:12, color:sub }}>{subs.filter(s=>s.d).length}/{subs.length}</div>}
+            </div>
+            {subs.map((s, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 0' }}>
+                <div onClick={()=>setSubs(subs.map((x,j)=>j===i?{...x,d:!x.d}:x))} style={{
+                  width:20, height:20, borderRadius:10, cursor:'pointer',
+                  border:`1.5px solid ${s.d?'#3A5A8A':sub}`, background:s.d?'#3A5A8A':'transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                }}>
+                  {s.d && <Icon name="check" size={12} color="#fff" strokeWidth={2.6}/>}
+                </div>
+                <input value={s.t} onChange={e=>setSubs(subs.map((x,j)=>j===i?{...x,t:e.target.value}:x))}
+                  style={{ flex:1, border:'none', outline:'none', background:'transparent', color: s.d?sub:textC, fontSize:14, fontFamily:'inherit', textDecoration: s.d?'line-through':'none' }}/>
+                <button onClick={()=>setSubs(subs.filter((_,j)=>j!==i))} style={{ border:'none', background:'transparent', color:sub, cursor:'pointer', padding:4, fontSize:18, lineHeight:1 }}>×</button>
+              </div>
+            ))}
+            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderTop: subs.length>0 ? `0.5px solid ${stroke}` : 'none', marginTop: subs.length>0 ? 6 : 0, paddingTop: subs.length>0 ? 10 : 6 }}>
+              <div style={{ width:20, height:20, borderRadius:10, border:`1.5px dashed ${sub}`, flexShrink:0 }}/>
+              <input value={subDraft} onChange={e=>setSubDraft(e.target.value)}
+                onKeyDown={e=>{ if(e.key==='Enter' && subDraft.trim()) { setSubs([...subs,{t:subDraft.trim(),d:false}]); setSubDraft(''); } }}
+                placeholder="サブタスクを追加"
+                style={{ flex:1, border:'none', outline:'none', background:'transparent', color:textC, fontSize:14, fontFamily:'inherit' }}/>
+              {subDraft.trim() && (
+                <button onClick={()=>{ setSubs([...subs,{t:subDraft.trim(),d:false}]); setSubDraft(''); }}
+                  style={{ border:'none', background:'transparent', color:accent, cursor:'pointer', fontSize:13, fontWeight:600, padding:'2px 6px' }}>追加</button>
+              )}
+            </div>
+          </div>
 
           {/* Priority */}
           <div style={{ background:cardBg, borderRadius:14, padding:'12px 14px', border:`0.5px solid ${stroke}` }}>

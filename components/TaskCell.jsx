@@ -16,7 +16,7 @@ function TaskCell({ task, onToggle, onDelete, onFlag, onOpen, dark, density='com
   const rowH = density === 'compact' ? 52 : density === 'roomy' ? 78 : 64;
 
   const list = LISTS.find(l => l.id === task.list);
-  const pri = PRI[task.pri];
+  const pri = PRI[task.pri] || PRI.none;
 
   // drag handlers
   const onPointerDown = (e) => {

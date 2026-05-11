@@ -1,5 +1,5 @@
 // Task detail sheet — shown when tapping a task cell
-function TaskDetail({ task, onClose, onToggle, onEdit, onDelete, dark }) {
+function TaskDetail({ task, onClose, onToggle, onEdit, onDelete, onSubToggle, dark }) {
   if (!task) return null;
   const textC = dark ? '#F5F1E6' : '#2B2A26';
   const sub  = dark ? 'rgba(245,241,230,0.55)' : 'rgba(43,42,38,0.55)';
@@ -68,7 +68,7 @@ function TaskDetail({ task, onClose, onToggle, onEdit, onDelete, dark }) {
                 <div style={{ width: `${(subDone/subs.length)*100}%`, height:'100%', background:'#3A5A8A' }}/>
               </div>
               {subs.map((s,i)=>(
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'6px 0' }}>
+                <div key={i} onClick={()=>onSubToggle && onSubToggle(task.id, i)} style={{ display:'flex', alignItems:'center', gap:10, padding:'6px 0', cursor: onSubToggle?'pointer':'default' }}>
                   <div style={{
                     width:20, height:20, borderRadius:10,
                     border:`1.5px solid ${s.d?'#3A5A8A':sub}`, background:s.d?'#3A5A8A':'transparent',

@@ -477,6 +477,7 @@
             onToggle={onToggle}
             onEdit={onStartEdit}
             onDelete={onDelete}
+            onSubToggle={(id, idx) => setTasks(tasks.map(t => t.id===id ? {...t, sub: t.sub.map((s,i)=>i===idx?{...s,d:!s.d}:s)} : t))}
             dark={dark}
           />
           <CategoryManager
